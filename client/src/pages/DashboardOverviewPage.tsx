@@ -1,0 +1,861 @@
+import { useCallback, useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  Users,
+  Eye,
+  MousePointer,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Target,
+  Search,
+  Globe,
+  Heart,
+  MessageCircle,
+  Share2,
+  BarChart3,
+  ArrowRight,
+  ExternalLink,
+  Zap,
+  Award,
+  Activity,
+  Clock,
+  Percent,
+  ChevronRight,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
+import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import LoadingState from "@/components/common/LoadingState";
+import ErrorState from "@/components/common/ErrorState";
+import EmptyState from "@/components/common/EmptyState";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
+import type { Project } from "@/types";
+
+// Types for aggregated data
+interface AggregatedMetrics {
+  website: {
+    users: number;
+    sessions: number;
+    pageviews: number;
+    bounceRate: number;
+    avgSessionDuration: number;
+    newUsers: number;
+  } | null;
+  advertising: {
+    totalSpend: number;
+    totalClicks: number;
+    totalImpressions: number;
+    totalConversions: number;
+    avgCpc: number;
+    avgCtr: number;
+  } | null;
+  social: {
+    totalFollowers: number;
+    totalEngagement: number;
+    totalReach: number;
+    platforms: { name: string; followers: number; engagement: number }[];
+  } | null;
+  seo: {
+    clicks: number;
+    impressions: number;
+    avgPosition: number;
+    ctr: number;
+  } | null;
+}
+
+// Chart colors
+const CHART_COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
+
+const DashboardOverviewPage = () => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const [project, setProject] = useState<Project | null>(null);
+  const [projectError, setProjectError] = useState<string | null>(null);
+  const [loadingProject, setLoadingProject] = useState(true);
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
+  const [metrics, setMetrics] = useState<AggregatedMetrics>({
+    website: null,
+    advertising: null,
+    social: null,
+    seo: null,
+  });
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Date range for the last 7 days
+  const getDateRange = () => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+    return {
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+    };
+  };
+
+  const fetchProject = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      setLoadingProject(true);
+      const response = await api.get<{ success: boolean; data: Project }>(`/projects/${projectId}`);
+      const project = response.data.data || response.data;
+      setProject(project as Project);
+      setProjectError(null);
+    } catch (error) {
+      setProjectError(error instanceof Error ? error.message : "Project not found.");
+    } finally {
+      setLoadingProject(false);
+    }
+  }, [projectId]);
+
+  const fetchAllMetrics = useCallback(async () => {
+    if (!projectId || !project) return;
+
+    setLoadingMetrics(true);
+    const { startDate, endDate } = getDateRange();
+    const newMetrics: AggregatedMetrics = {
+      website: null,
+      advertising: null,
+      social: null,
+      seo: null,
+    };
+
+    // Fetch Google Analytics data
+    if (project.gaPropertyId) {
+      try {
+        const { data } = await api.get(`/analytics/overview/${projectId}`, {
+          params: { startDate, endDate },
+        });
+        if (data.success && data.data) {
+          newMetrics.website = {
+            users: data.data.totalUsers || 0,
+            sessions: data.data.sessions || 0,
+            pageviews: data.data.pageviews || 0,
+            bounceRate: data.data.bounceRate || 0,
+            avgSessionDuration: data.data.averageSessionDuration || 0,
+            newUsers: data.data.newUsers || 0,
+          };
+        }
+      } catch (error) {
+        console.log("[Overview] Failed to fetch GA data:", error);
+      }
+    }
+
+    // Fetch advertising data (Google Ads + Meta Ads)
+    let totalAdSpend = 0;
+    let totalAdClicks = 0;
+    let totalAdImpressions = 0;
+    let totalAdConversions = 0;
+    let hasAdData = false;
+
+    if (project.googleAdsCustomerId) {
+      try {
+        const { data } = await api.get(`/google-ads/${projectId}/overview`, {
+          params: { startDate, endDate },
+        });
+        if (data.success && data.data) {
+          totalAdSpend += data.data.cost || 0;
+          totalAdClicks += data.data.clicks || 0;
+          totalAdImpressions += data.data.impressions || 0;
+          totalAdConversions += data.data.conversions || 0;
+          hasAdData = true;
+        }
+      } catch (error) {
+        console.log("[Overview] Failed to fetch Google Ads data:", error);
+      }
+    }
+
+    if (project.metaAdsAccountId) {
+      try {
+        const { data } = await api.get(`/meta-ads/insights/${projectId}`, {
+          params: { startDate, endDate },
+        });
+        if (data.success && data.data) {
+          totalAdSpend += parseFloat(data.data.spend) || 0;
+          totalAdClicks += parseInt(data.data.clicks) || 0;
+          totalAdImpressions += parseInt(data.data.impressions) || 0;
+          totalAdConversions += parseInt(data.data.conversions) || 0;
+          hasAdData = true;
+        }
+      } catch (error) {
+        console.log("[Overview] Failed to fetch Meta Ads data:", error);
+      }
+    }
+
+    if (hasAdData) {
+      newMetrics.advertising = {
+        totalSpend: totalAdSpend,
+        totalClicks: totalAdClicks,
+        totalImpressions: totalAdImpressions,
+        totalConversions: totalAdConversions,
+        avgCpc: totalAdClicks > 0 ? totalAdSpend / totalAdClicks : 0,
+        avgCtr: totalAdImpressions > 0 ? (totalAdClicks / totalAdImpressions) * 100 : 0,
+      };
+    }
+
+    // Fetch social media data
+    const socialPlatforms: { name: string; followers: number; engagement: number }[] = [];
+    let totalFollowers = 0;
+    let totalEngagement = 0;
+    let totalReach = 0;
+
+    if (project.facebookPageId) {
+      try {
+        const { data } = await api.get(`/facebook/overview/${projectId}`, {
+          params: { startDate, endDate },
+        });
+        if (data.success && data.data) {
+          const fbFollowers = data.data.pageFollowers || data.data.pageLikes || 0;
+          const fbEngagement = data.data.pagePostEngagements || data.data.pageEngagedUsers || 0;
+          totalFollowers += fbFollowers;
+          totalEngagement += fbEngagement;
+          totalReach += data.data.pageImpressions || data.data.pageReach || 0;
+          socialPlatforms.push({ name: "Facebook", followers: fbFollowers, engagement: fbEngagement });
+        }
+      } catch (error) {
+        console.log("[Overview] Failed to fetch Facebook data:", error);
+      }
+    }
+
+    if (project.instagram?.igUserId) {
+      try {
+        const { data } = await api.get(`/instagram/insights/${projectId}`);
+        if (data.success && data.data) {
+          const igFollowers = data.data.lifetime?.follower_count || data.data.days_28?.follower_count || 0;
+          const igEngagement = data.data.lifetime?.total_interactions || data.data.days_28?.total_interactions || 0;
+          totalFollowers += igFollowers;
+          totalEngagement += igEngagement;
+          totalReach += data.data.days_28?.reach || data.data.lifetime?.reach || 0;
+          socialPlatforms.push({ name: "Instagram", followers: igFollowers, engagement: igEngagement });
+        }
+      } catch (error) {
+        console.log("[Overview] Failed to fetch Instagram data:", error);
+      }
+    }
+
+    if (socialPlatforms.length > 0) {
+      newMetrics.social = {
+        totalFollowers,
+        totalEngagement,
+        totalReach,
+        platforms: socialPlatforms,
+      };
+    }
+
+    // Fetch SEO data from Search Console
+    if (project.searchConsoleSiteUrl) {
+      try {
+        const { data } = await api.get(`/gsc/${projectId}/overview`, {
+          params: { startDate, endDate },
+        });
+        if (data.success && data.data) {
+          newMetrics.seo = {
+            clicks: data.data.clicks || 0,
+            impressions: data.data.impressions || 0,
+            avgPosition: data.data.position || 0,
+            ctr: data.data.ctr || 0,
+          };
+        }
+      } catch (error) {
+        console.log("[Overview] Failed to fetch GSC data:", error);
+      }
+    }
+
+    setMetrics(newMetrics);
+    setLastUpdated(new Date());
+    setLoadingMetrics(false);
+  }, [projectId, project]);
+
+  useEffect(() => {
+    void fetchProject();
+  }, [fetchProject]);
+
+  useEffect(() => {
+    if (project) {
+      void fetchAllMetrics();
+    }
+  }, [project, fetchAllMetrics]);
+
+  const handleRefresh = () => {
+    void fetchAllMetrics();
+  };
+
+  if (!projectId) {
+    return (
+      <EmptyState
+        title="No project selected"
+        description="Choose a project from your list to view dashboard."
+      />
+    );
+  }
+
+  if (loadingProject) {
+    return <LoadingState message="Loading project..." className="py-16" />;
+  }
+
+  if (projectError) {
+    return <ErrorState description={projectError} onRetry={fetchProject} className="py-16" />;
+  }
+
+  const hasGA = !!project?.gaPropertyId;
+  const hasAds = !!project?.googleAdsCustomerId;
+  const hasMetaAds = !!project?.metaAdsAccountId;
+  const hasSearchConsole = !!project?.searchConsoleSiteUrl;
+  const hasFacebook = !!project?.facebookPageId;
+  const hasInstagram = !!project?.instagram?.igUserId;
+  const hasYouTube = !!project?.youtubeChannelId;
+  const hasLinkedIn = !!project?.linkedinPageId;
+
+  const connectedCount = [hasGA, hasAds, hasMetaAds, hasSearchConsole, hasFacebook, hasInstagram, hasYouTube, hasLinkedIn].filter(Boolean).length;
+  const totalPlatforms = 8;
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+    return new Intl.NumberFormat().format(Math.round(num));
+  };
+
+  const formatCurrency = (num: number) => {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(num);
+  };
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return `${mins}m ${secs}s`;
+  };
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  // Prepare chart data for social platforms
+  const socialChartData = metrics.social?.platforms.map((p, i) => ({
+    name: p.name,
+    value: p.followers,
+    color: CHART_COLORS[i % CHART_COLORS.length],
+  })) || [];
+
+  return (
+    <motion.section
+      className="space-y-6"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      {/* Header Section */}
+      <motion.div variants={itemVariants} className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <a
+              href={project?.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold uppercase tracking-wide text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              {project?.websiteUrl?.replace(/^https?:\/\//, "")}
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900">{project?.name ?? "Project"}</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Executive Dashboard • Last 7 Days
+            {lastUpdated && (
+              <span className="ml-2 text-slate-400">
+                Updated {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="text-sm text-slate-500">Connected Platforms</p>
+            <p className="text-2xl font-bold text-slate-900">
+              {connectedCount}/{totalPlatforms}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={loadingMetrics}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loadingMetrics ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Key Metrics Row - Executive Summary */}
+      <motion.div variants={itemVariants} className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        {/* Website Visitors */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-5 text-white shadow-lg shadow-blue-500/25">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="h-5 w-5 text-blue-200" />
+              <span className="text-sm font-medium text-blue-100">Website Visitors</span>
+            </div>
+            <div className="text-3xl font-bold">
+              {metrics.website ? formatNumber(metrics.website.users) : hasGA ? "..." : "—"}
+            </div>
+            {metrics.website && (
+              <p className="text-xs text-blue-200 mt-1">
+                {formatNumber(metrics.website.newUsers)} new users
+              </p>
+            )}
+            {!hasGA && <p className="text-xs text-blue-200 mt-1">Connect Google Analytics</p>}
+          </div>
+        </div>
+
+        {/* Ad Spend */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 text-white shadow-lg shadow-emerald-500/25">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="h-5 w-5 text-emerald-200" />
+              <span className="text-sm font-medium text-emerald-100">Ad Spend</span>
+            </div>
+            <div className="text-3xl font-bold">
+              {metrics.advertising ? formatCurrency(metrics.advertising.totalSpend) : (hasAds || hasMetaAds) ? "..." : "—"}
+            </div>
+            {metrics.advertising && (
+              <p className="text-xs text-emerald-200 mt-1">
+                {formatNumber(metrics.advertising.totalConversions)} conversions
+              </p>
+            )}
+            {!hasAds && !hasMetaAds && <p className="text-xs text-emerald-200 mt-1">Connect Ads platforms</p>}
+          </div>
+        </div>
+
+        {/* Social Followers */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 p-5 text-white shadow-lg shadow-pink-500/25">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <Heart className="h-5 w-5 text-pink-200" />
+              <span className="text-sm font-medium text-pink-100">Social Followers</span>
+            </div>
+            <div className="text-3xl font-bold">
+              {metrics.social ? formatNumber(metrics.social.totalFollowers) : (hasFacebook || hasInstagram) ? "..." : "—"}
+            </div>
+            {metrics.social && (
+              <p className="text-xs text-pink-200 mt-1">
+                {formatNumber(metrics.social.totalEngagement)} engagements
+              </p>
+            )}
+            {!hasFacebook && !hasInstagram && <p className="text-xs text-pink-200 mt-1">Connect social platforms</p>}
+          </div>
+        </div>
+
+        {/* Search Visibility */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 p-5 text-white shadow-lg shadow-purple-500/25">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <Search className="h-5 w-5 text-purple-200" />
+              <span className="text-sm font-medium text-purple-100">Search Clicks</span>
+            </div>
+            <div className="text-3xl font-bold">
+              {metrics.seo ? formatNumber(metrics.seo.clicks) : hasSearchConsole ? "..." : "—"}
+            </div>
+            {metrics.seo && (
+              <p className="text-xs text-purple-200 mt-1">
+                Position #{metrics.seo.avgPosition.toFixed(1)}
+              </p>
+            )}
+            {!hasSearchConsole && <p className="text-xs text-purple-200 mt-1">Connect Search Console</p>}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Website Performance Section */}
+      {(hasGA || metrics.website) && (
+        <motion.div variants={itemVariants}>
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Globe className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Website Performance</CardTitle>
+                    <CardDescription>Google Analytics insights</CardDescription>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/dashboard/${projectId}/analytics`)}
+                  className="gap-1"
+                >
+                  View Details <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              {loadingMetrics && !metrics.website ? (
+                <div className="flex justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
+                </div>
+              ) : metrics.website ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  <div className="text-center p-4 bg-slate-50 rounded-xl">
+                    <Users className="h-5 w-5 text-blue-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.users)}</p>
+                    <p className="text-xs text-slate-500">Total Users</p>
+                  </div>
+                  <div className="text-center p-4 bg-slate-50 rounded-xl">
+                    <Activity className="h-5 w-5 text-emerald-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.sessions)}</p>
+                    <p className="text-xs text-slate-500">Sessions</p>
+                  </div>
+                  <div className="text-center p-4 bg-slate-50 rounded-xl">
+                    <Eye className="h-5 w-5 text-purple-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.pageviews)}</p>
+                    <p className="text-xs text-slate-500">Pageviews</p>
+                  </div>
+                  <div className="text-center p-4 bg-slate-50 rounded-xl">
+                    <Percent className="h-5 w-5 text-amber-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-slate-900">{metrics.website.bounceRate.toFixed(1)}%</p>
+                    <p className="text-xs text-slate-500">Bounce Rate</p>
+                  </div>
+                  <div className="text-center p-4 bg-slate-50 rounded-xl">
+                    <Clock className="h-5 w-5 text-pink-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-slate-900">{formatDuration(metrics.website.avgSessionDuration)}</p>
+                    <p className="text-xs text-slate-500">Avg. Duration</p>
+                  </div>
+                  <div className="text-center p-4 bg-slate-50 rounded-xl">
+                    <Zap className="h-5 w-5 text-indigo-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.newUsers)}</p>
+                    <p className="text-xs text-slate-500">New Users</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Globe className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500">Connect Google Analytics to see website performance</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Two Column Layout for Ads and Social */}
+      <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-2">
+        {/* Advertising Performance */}
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <Target className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Advertising</CardTitle>
+                  <CardDescription>Google Ads + Meta Ads</CardDescription>
+                </div>
+              </div>
+              {(hasAds || hasMetaAds) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/dashboard/${projectId}/${hasAds ? "ads" : "meta-ads"}`)}
+                  className="gap-1"
+                >
+                  View <ChevronRight className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            {loadingMetrics && !metrics.advertising ? (
+              <div className="flex justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
+              </div>
+            ) : metrics.advertising ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-emerald-50 rounded-xl">
+                    <p className="text-xs text-emerald-600 font-medium mb-1">Total Spend</p>
+                    <p className="text-2xl font-bold text-slate-900">{formatCurrency(metrics.advertising.totalSpend)}</p>
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-xl">
+                    <p className="text-xs text-blue-600 font-medium mb-1">Conversions</p>
+                    <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.advertising.totalConversions)}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-slate-900">{formatNumber(metrics.advertising.totalClicks)}</p>
+                    <p className="text-xs text-slate-500">Clicks</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-slate-900">{formatCurrency(metrics.advertising.avgCpc)}</p>
+                    <p className="text-xs text-slate-500">Avg. CPC</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-slate-900">{metrics.advertising.avgCtr.toFixed(2)}%</p>
+                    <p className="text-xs text-slate-500">CTR</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Target className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500 mb-3">Connect advertising platforms to track campaigns</p>
+                <div className="flex justify-center gap-2">
+                  {!hasAds && (
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/${projectId}/ads`)}>
+                      Connect Google Ads
+                    </Button>
+                  )}
+                  {!hasMetaAds && (
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/${projectId}/meta-ads`)}>
+                      Connect Meta Ads
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Social Media Performance */}
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-pink-50 to-rose-50 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-pink-100 rounded-lg">
+                  <Heart className="h-5 w-5 text-pink-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Social Media</CardTitle>
+                  <CardDescription>Facebook + Instagram</CardDescription>
+                </div>
+              </div>
+              {(hasFacebook || hasInstagram) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/dashboard/${projectId}/${hasFacebook ? "facebook" : "instagram"}`)}
+                  className="gap-1"
+                >
+                  View <ChevronRight className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            {loadingMetrics && !metrics.social ? (
+              <div className="flex justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
+              </div>
+            ) : metrics.social ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-6">
+                  {socialChartData.length > 0 && (
+                    <div className="flex-shrink-0">
+                      <ResponsiveContainer width={120} height={120}>
+                        <PieChart>
+                          <Pie
+                            data={socialChartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={35}
+                            outerRadius={55}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {socialChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-3">
+                    {metrics.social.platforms.map((platform, index) => (
+                      <div key={platform.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                          />
+                          <span className="text-sm font-medium text-slate-700">{platform.name}</span>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {formatNumber(platform.followers)} followers
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t">
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-slate-900">{formatNumber(metrics.social.totalEngagement)}</p>
+                    <p className="text-xs text-slate-500">Total Engagement</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-slate-900">{formatNumber(metrics.social.totalReach)}</p>
+                    <p className="text-xs text-slate-500">Total Reach</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Heart className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500 mb-3">Connect social platforms to track engagement</p>
+                <div className="flex justify-center gap-2">
+                  {!hasFacebook && (
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/${projectId}/facebook`)}>
+                      Connect Facebook
+                    </Button>
+                  )}
+                  {!hasInstagram && (
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/${projectId}/instagram`)}>
+                      Connect Instagram
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* SEO Performance */}
+      {(hasSearchConsole || metrics.seo) && (
+        <motion.div variants={itemVariants}>
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-violet-50 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Search className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Search Performance</CardTitle>
+                    <CardDescription>Google Search Console insights</CardDescription>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/dashboard/${projectId}/search-console`)}
+                  className="gap-1"
+                >
+                  View Details <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              {loadingMetrics && !metrics.seo ? (
+                <div className="flex justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
+                </div>
+              ) : metrics.seo ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-purple-50 rounded-xl">
+                    <MousePointer className="h-5 w-5 text-purple-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.seo.clicks)}</p>
+                    <p className="text-xs text-slate-500">Total Clicks</p>
+                  </div>
+                  <div className="text-center p-4 bg-indigo-50 rounded-xl">
+                    <Eye className="h-5 w-5 text-indigo-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.seo.impressions)}</p>
+                    <p className="text-xs text-slate-500">Impressions</p>
+                  </div>
+                  <div className="text-center p-4 bg-violet-50 rounded-xl">
+                    <Percent className="h-5 w-5 text-violet-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-slate-900">{(metrics.seo.ctr * 100).toFixed(1)}%</p>
+                    <p className="text-xs text-slate-500">Click Rate</p>
+                  </div>
+                  <div className="text-center p-4 bg-fuchsia-50 rounded-xl">
+                    <Award className="h-5 w-5 text-fuchsia-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-slate-900">#{metrics.seo.avgPosition.toFixed(1)}</p>
+                    <p className="text-xs text-slate-500">Avg. Position</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Search className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500">Connect Google Search Console to see SEO performance</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Connection Status Grid */}
+      <motion.div variants={itemVariants}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-slate-600" />
+              Platform Connections
+            </CardTitle>
+            <CardDescription>
+              {connectedCount} of {totalPlatforms} platforms connected
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { name: "Google Analytics", connected: hasGA, path: "analytics", color: "blue" },
+                { name: "Google Ads", connected: hasAds, path: "ads", color: "emerald" },
+                { name: "Meta Ads", connected: hasMetaAds, path: "meta-ads", color: "indigo" },
+                { name: "Search Console", connected: hasSearchConsole, path: "search-console", color: "purple" },
+                { name: "Facebook", connected: hasFacebook, path: "facebook", color: "blue" },
+                { name: "Instagram", connected: hasInstagram, path: "instagram", color: "pink" },
+                { name: "YouTube", connected: hasYouTube, path: "youtube", color: "red" },
+                { name: "LinkedIn", connected: hasLinkedIn, path: "linkedin", color: "sky" },
+              ].map((platform) => (
+                <button
+                  key={platform.name}
+                  onClick={() => navigate(`/dashboard/${projectId}/${platform.path}`)}
+                  className={`p-3 rounded-xl border-2 transition-all text-left ${
+                    platform.connected
+                      ? "border-green-200 bg-green-50 hover:bg-green-100"
+                      : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-slate-700">{platform.name}</span>
+                    {platform.connected ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-slate-400" />
+                    )}
+                  </div>
+                  <p className={`text-xs ${platform.connected ? "text-green-600" : "text-slate-500"}`}>
+                    {platform.connected ? "Connected" : "Not connected"}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.section>
+  );
+};
+
+export default DashboardOverviewPage;
