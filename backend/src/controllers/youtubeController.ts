@@ -146,6 +146,18 @@ export const saveYouTubeChannel = asyncHandler(async (req: Request, res: Respons
       return;
     }
 
+    // Verify YouTube connection exists (OAuth must be completed first)
+    const connection = await youtubeAuthService.getConnectionByProject(projectId);
+    if (!connection) {
+      console.log(`[YouTube Save Channel] No YouTube connection found for project ${projectId}`);
+      res.status(400).json({
+        success: false,
+        error: 'YouTube OAuth connection not found. Please complete the authorization first.',
+      });
+      return;
+    }
+    console.log(`[YouTube Save Channel] Found existing connection for project ${projectId}`);
+
     // Update project with YouTube channel ID
     const updatedProject = await projectService.updateProject(projectId, userId, {
       youtubeChannelId: channelId,
@@ -161,6 +173,8 @@ export const saveYouTubeChannel = asyncHandler(async (req: Request, res: Respons
 
     const projectData = updatedProject.toObject ? updatedProject.toObject() : updatedProject;
     
+    console.log(`[YouTube Save Channel] Successfully saved channel ${channelId} for project ${projectId}`);
+    
     res.status(200).json({
       success: true,
       data: {
@@ -169,6 +183,7 @@ export const saveYouTubeChannel = asyncHandler(async (req: Request, res: Respons
       },
     });
   } catch (error: any) {
+    console.error(`[YouTube Save Channel] Error:`, error);
     res.status(400).json({
       success: false,
       error: error.message,

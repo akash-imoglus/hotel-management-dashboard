@@ -160,46 +160,66 @@ class FacebookAuthService implements IFacebookAuthService {
 
   public async getFacebookPages(accessToken: string): Promise<FacebookPage[]> {
     try {
-      console.log('[Facebook Auth Service] Fetching Facebook pages...');
+      console.log('[Facebook Auth Service] Fetching Facebook pages with pagination...');
       
-      // Get user's pages
-      const pagesUrl = `${FACEBOOK_API_BASE_URL}/me/accounts`;
-      const params = new URLSearchParams({
+      const allPages: FacebookPage[] = [];
+      let nextUrl: string | null = `${FACEBOOK_API_BASE_URL}/me/accounts`;
+      const baseParams = new URLSearchParams({
         access_token: accessToken,
         fields: 'id,name,category,access_token',
+        limit: '100', // Request maximum allowed per page
       });
 
-      const response = await fetch(`${pagesUrl}?${params.toString()}`, {
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[Facebook Auth Service] Failed to fetch pages:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText,
+      // Paginate through all results
+      while (nextUrl) {
+        const url = nextUrl.includes('?') ? nextUrl : `${nextUrl}?${baseParams.toString()}`;
+        
+        const response = await fetch(url, {
+          method: 'GET',
         });
-        throw new Error(`Failed to fetch Facebook pages: ${response.statusText}`);
-      }
 
-      const data = await response.json() as {
-        data?: FacebookPage[];
-        error?: {
-          message: string;
-          type: string;
-          code: number;
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[Facebook Auth Service] Failed to fetch pages:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText,
+          });
+          throw new Error(`Failed to fetch Facebook pages: ${response.statusText}`);
+        }
+
+        const data = await response.json() as {
+          data?: FacebookPage[];
+          paging?: {
+            cursors?: {
+              before?: string;
+              after?: string;
+            };
+            next?: string;
+            previous?: string;
+          };
+          error?: {
+            message: string;
+            type: string;
+            code: number;
+          };
         };
-      };
 
-      if (data.error) {
-        throw new Error(`Facebook API Error: ${data.error.message}`);
+        if (data.error) {
+          throw new Error(`Facebook API Error: ${data.error.message}`);
+        }
+
+        const pages = data.data || [];
+        allPages.push(...pages);
+        console.log(`[Facebook Auth Service] Fetched ${pages.length} page(s), total so far: ${allPages.length}`);
+        
+        // Check if there's a next page
+        nextUrl = data.paging?.next || null;
       }
 
-      const pages = data.data || [];
-      console.log(`[Facebook Auth Service] Found ${pages.length} page(s)`);
+      console.log(`[Facebook Auth Service] Found ${allPages.length} total page(s)`);
       
-      return pages;
+      return allPages;
     } catch (error: any) {
       console.error('[Facebook Auth Service] Error fetching pages:', error.message);
       // Don't throw error - allow manual entry instead

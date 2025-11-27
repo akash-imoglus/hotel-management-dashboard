@@ -15,7 +15,8 @@ import {
   Globe,
   Search,
   Sparkles,
-  BarChart3
+  BarChart3,
+  Eye
 } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import ReactCountryFlag from "react-country-flag";

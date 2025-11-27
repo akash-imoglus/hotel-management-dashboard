@@ -59,13 +59,22 @@ const ConnectYouTube = ({ projectId, onSuccess, onClose }: ConnectYouTubeProps) 
         if (data.success && data.data.length > 0) {
           setChannels(data.data);
           setStep("select");
+        } else if (data.success) {
+          // Connection exists but no channels found - allow manual entry
+          setStep("select");
+          setError("⚠️ No channels found automatically. You can enter your YouTube Channel ID manually below.");
         }
       } catch (err: any) {
         // Connection doesn't exist or error - stay on init step
         // This is expected if OAuth hasn't been completed
         const errorMessage = err.response?.data?.error || err.message || "";
         if (errorMessage.includes("YouTube Data API") || errorMessage.includes("not been used") || errorMessage.includes("disabled")) {
-          setError("⚠️ YouTube Data API v3 is not enabled. Please enable it in your Google Cloud Console, then try again. You can also enter your channel ID manually after connecting.");
+          // API disabled but connection might exist - go to select for manual entry
+          setStep("select");
+          setError("⚠️ YouTube Data API v3 is not enabled. You can enter your channel ID manually after connecting.");
+        } else if (errorMessage.includes("connection not found")) {
+          // No OAuth connection - stay on init step
+          console.log("[ConnectYouTube] No existing connection, showing OAuth step");
         }
       } finally {
         setLoading(false);
@@ -163,7 +172,14 @@ const ConnectYouTube = ({ projectId, onSuccess, onClose }: ConnectYouTubeProps) 
   // Step 2: Save selected channel to project
   const handleSaveChannel = async () => {
     if (!selectedChannelId) {
-      setError("Please select a YouTube channel");
+      setError("Please select a YouTube channel or enter a channel ID");
+      return;
+    }
+
+    // Validate channel ID format (should start with UC for user channels)
+    const trimmedChannelId = selectedChannelId.trim();
+    if (!trimmedChannelId.startsWith("UC") && trimmedChannelId.length !== 24) {
+      setError("Invalid channel ID format. YouTube channel IDs typically start with 'UC' and are 24 characters long.");
       return;
     }
 
@@ -172,7 +188,7 @@ const ConnectYouTube = ({ projectId, onSuccess, onClose }: ConnectYouTubeProps) 
       setError(null);
       await api.post("/youtube/channel", {
         projectId,
-        channelId: selectedChannelId,
+        channelId: trimmedChannelId,
       });
       setStep("success");
       // Wait a moment then close and trigger success
@@ -180,8 +196,14 @@ const ConnectYouTube = ({ projectId, onSuccess, onClose }: ConnectYouTubeProps) 
         onSuccess?.();
         onClose?.();
       }, 1500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save YouTube channel");
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || "Failed to save YouTube channel";
+      if (errorMessage.includes("OAuth connection not found") || errorMessage.includes("connection not found")) {
+        setError("⚠️ Please complete YouTube authorization first before entering a channel ID.");
+        setStep("init");
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
