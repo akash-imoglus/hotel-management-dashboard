@@ -2,6 +2,10 @@ import { ENV } from '../config/env';
 import googleAdsAuthService from './googleAdsAuthService';
 import { IGoogleAdsConnection } from '../models/GoogleAdsConnection';
 
+// Google Ads API v16
+const GOOGLE_ADS_API_VERSION = 'v16';
+const GOOGLE_ADS_API_BASE_URL = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}`;
+
 export interface IGoogleAdsDataService {
   getAccessToken(projectId: string): Promise<string>;
   getOverviewMetrics(
@@ -31,28 +35,82 @@ export interface IGoogleAdsDataService {
   ): Promise<any>;
 }
 
+// Helper to format customer ID (remove dashes)
+const formatCustomerId = (customerId: string): string => {
+  return customerId.replace(/-/g, '');
+};
+
+// Helper to execute GAQL query
+const executeGaqlQuery = async (
+  customerId: string,
+  accessToken: string,
+  query: string
+): Promise<any[]> => {
+  const formattedCustomerId = formatCustomerId(customerId);
+  const url = `${GOOGLE_ADS_API_BASE_URL}/customers/${formattedCustomerId}/googleAds:searchStream`;
+  
+  console.log(`[Google Ads API] Executing query for customer: ${formattedCustomerId}`);
+  console.log(`[Google Ads API] Query: ${query.substring(0, 200)}...`);
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'developer-token': ENV.GOOGLE_ADS_DEVELOPER_TOKEN || '',
+        'login-customer-id': formattedCustomerId, // For MCC accounts, use the MCC ID
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Google Ads API] Error response:`, errorText);
+      throw new Error(`Google Ads API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    // searchStream returns array of results
+    const results: any[] = [];
+    if (Array.isArray(data)) {
+      for (const batch of data) {
+        if (batch.results) {
+          results.push(...batch.results);
+        }
+      }
+    }
+    
+    console.log(`[Google Ads API] Retrieved ${results.length} results`);
+    return results;
+  } catch (error: any) {
+    console.error(`[Google Ads API] Request failed:`, error.message);
+    throw error;
+  }
+};
+
+// Convert micros to actual value (Google Ads stores costs in micros)
+const microsToValue = (micros: string | number): number => {
+  return Number(micros) / 1000000;
+};
+
 class GoogleAdsDataService implements IGoogleAdsDataService {
   public async getAccessToken(projectId: string): Promise<string> {
-    // Get connection details
     const connection = await googleAdsAuthService.getConnectionByProject(projectId);
     if (!connection) {
       throw new Error('Google Ads connection not found for this project');
     }
 
-    // Check if access token is still valid
     if (connection.accessToken && connection.expiresAt && new Date() < connection.expiresAt) {
       return connection.accessToken;
     }
 
-    // Refresh access token
     if (connection.refreshToken) {
       const { accessToken, expiresAt } = await googleAdsAuthService.refreshAccessToken(connection.refreshToken);
-      
-      // Update connection with new access token
       connection.accessToken = accessToken;
       connection.expiresAt = expiresAt || undefined;
       await connection.save();
-
       return accessToken;
     }
 
@@ -67,23 +125,77 @@ class GoogleAdsDataService implements IGoogleAdsDataService {
     console.log(`[Google Ads Data Service] Fetching overview metrics for customer: ${customerId}`);
     console.log(`[Google Ads Data Service] Date range: ${dateRange.startDate} to ${dateRange.endDate}`);
     
-    // TODO: Implement actual Google Ads API overview metrics fetching
-    // This requires the google-ads-api package and proper GAQL queries
-    
-    // Mock data for account overview - similar to GA overview
-    return {
-      impressions: 21400,
-      clicks: 565,
-      cost: 2230.75,
-      conversions: 27,
-      ctr: 2.64,
-      averageCpc: 3.95,
-      costPerConversion: 82.62,
-      averageCpm: 104.24,
-      conversionRate: 4.78,
-      interactions: 890,
-      interactionRate: 4.16,
-    };
+    const query = `
+      SELECT
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions,
+        metrics.ctr,
+        metrics.average_cpc,
+        metrics.cost_per_conversion,
+        metrics.average_cpm,
+        metrics.conversions_from_interactions_rate,
+        metrics.interactions,
+        metrics.interaction_rate
+      FROM customer
+      WHERE segments.date BETWEEN '${dateRange.startDate}' AND '${dateRange.endDate}'
+    `;
+
+    try {
+      const results = await executeGaqlQuery(customerId, accessToken, query);
+      
+      if (results.length === 0) {
+        return {
+          impressions: 0,
+          clicks: 0,
+          cost: 0,
+          conversions: 0,
+          ctr: 0,
+          averageCpc: 0,
+          costPerConversion: 0,
+          averageCpm: 0,
+          conversionRate: 0,
+          interactions: 0,
+          interactionRate: 0,
+        };
+      }
+
+      // Aggregate metrics across all results
+      let totalImpressions = 0;
+      let totalClicks = 0;
+      let totalCostMicros = 0;
+      let totalConversions = 0;
+      let totalInteractions = 0;
+
+      for (const result of results) {
+        const metrics = result.metrics || {};
+        totalImpressions += Number(metrics.impressions || 0);
+        totalClicks += Number(metrics.clicks || 0);
+        totalCostMicros += Number(metrics.costMicros || 0);
+        totalConversions += Number(metrics.conversions || 0);
+        totalInteractions += Number(metrics.interactions || 0);
+      }
+
+      const totalCost = microsToValue(totalCostMicros);
+      
+      return {
+        impressions: totalImpressions,
+        clicks: totalClicks,
+        cost: totalCost,
+        conversions: totalConversions,
+        ctr: totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0,
+        averageCpc: totalClicks > 0 ? totalCost / totalClicks : 0,
+        costPerConversion: totalConversions > 0 ? totalCost / totalConversions : 0,
+        averageCpm: totalImpressions > 0 ? (totalCost / totalImpressions) * 1000 : 0,
+        conversionRate: totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0,
+        interactions: totalInteractions,
+        interactionRate: totalImpressions > 0 ? (totalInteractions / totalImpressions) * 100 : 0,
+      };
+    } catch (error: any) {
+      console.error(`[Google Ads Data Service] Error fetching overview:`, error.message);
+      throw new Error(`Failed to fetch Google Ads overview: ${error.message}`);
+    }
   }
 
   public async getLocationData(
@@ -92,44 +204,62 @@ class GoogleAdsDataService implements IGoogleAdsDataService {
     dateRange: { startDate: string; endDate: string }
   ): Promise<any> {
     console.log(`[Google Ads Data Service] Fetching location data for customer: ${customerId}`);
-    console.log(`[Google Ads Data Service] Date range: ${dateRange.startDate} to ${dateRange.endDate}`);
     
-    // TODO: Implement actual Google Ads API location data fetching
-    // Query user_location_view or geographic_view resources
-    
-    // Mock data for location performance
-    return [
-      {
-        country: 'United States',
-        countryCode: 'US',
-        impressions: 12500,
-        clicks: 320,
-        cost: 1250.50,
-        conversions: 15,
-        ctr: 2.56,
-        averageCpc: 3.91,
-      },
-      {
-        country: 'United Kingdom',
-        countryCode: 'GB',
-        impressions: 5600,
-        clicks: 145,
-        cost: 580.25,
-        conversions: 8,
-        ctr: 2.59,
-        averageCpc: 4.00,
-      },
-      {
-        country: 'Canada',
-        countryCode: 'CA',
-        impressions: 3300,
-        clicks: 100,
-        cost: 400.00,
-        conversions: 4,
-        ctr: 3.03,
-        averageCpc: 4.00,
-      },
-    ];
+    const query = `
+      SELECT
+        geographic_view.country_criterion_id,
+        geographic_view.location_type,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions,
+        metrics.ctr,
+        metrics.average_cpc
+      FROM geographic_view
+      WHERE segments.date BETWEEN '${dateRange.startDate}' AND '${dateRange.endDate}'
+        AND geographic_view.location_type = 'LOCATION_OF_PRESENCE'
+      ORDER BY metrics.clicks DESC
+      LIMIT 20
+    `;
+
+    try {
+      const results = await executeGaqlQuery(customerId, accessToken, query);
+      
+      // Country code mapping (common ones)
+      const countryCodeMap: Record<string, { name: string; code: string }> = {
+        '2840': { name: 'United States', code: 'US' },
+        '2826': { name: 'United Kingdom', code: 'GB' },
+        '2124': { name: 'Canada', code: 'CA' },
+        '2036': { name: 'Australia', code: 'AU' },
+        '2356': { name: 'India', code: 'IN' },
+        '2276': { name: 'Germany', code: 'DE' },
+        '2250': { name: 'France', code: 'FR' },
+        '2392': { name: 'Japan', code: 'JP' },
+        '2076': { name: 'Brazil', code: 'BR' },
+        '2484': { name: 'Mexico', code: 'MX' },
+      };
+
+      return results.map((result: any) => {
+        const metrics = result.metrics || {};
+        const geoView = result.geographicView || {};
+        const countryId = geoView.countryCriterionId || '0';
+        const countryInfo = countryCodeMap[countryId] || { name: `Country ${countryId}`, code: 'XX' };
+        
+        return {
+          country: countryInfo.name,
+          countryCode: countryInfo.code,
+          impressions: Number(metrics.impressions || 0),
+          clicks: Number(metrics.clicks || 0),
+          cost: microsToValue(metrics.costMicros || 0),
+          conversions: Number(metrics.conversions || 0),
+          ctr: Number(metrics.ctr || 0) * 100,
+          averageCpc: microsToValue(metrics.averageCpc || 0),
+        };
+      });
+    } catch (error: any) {
+      console.error(`[Google Ads Data Service] Error fetching locations:`, error.message);
+      throw new Error(`Failed to fetch Google Ads location data: ${error.message}`);
+    }
   }
 
   public async getDeviceData(
@@ -138,41 +268,69 @@ class GoogleAdsDataService implements IGoogleAdsDataService {
     dateRange: { startDate: string; endDate: string }
   ): Promise<any> {
     console.log(`[Google Ads Data Service] Fetching device data for customer: ${customerId}`);
-    console.log(`[Google Ads Data Service] Date range: ${dateRange.startDate} to ${dateRange.endDate}`);
     
-    // TODO: Implement actual Google Ads API device data fetching
-    // Query device performance using segments.segment = 'device'
-    
-    // Mock data for device performance
-    return [
-      {
-        device: 'Mobile',
-        impressions: 12800,
-        clicks: 340,
-        cost: 1340.50,
-        conversions: 18,
-        ctr: 2.66,
-        averageCpc: 3.94,
-      },
-      {
-        device: 'Desktop',
-        impressions: 6500,
-        clicks: 180,
-        cost: 720.00,
-        conversions: 7,
-        ctr: 2.77,
-        averageCpc: 4.00,
-      },
-      {
-        device: 'Tablet',
-        impressions: 2100,
-        clicks: 45,
-        cost: 170.25,
-        conversions: 2,
-        ctr: 2.14,
-        averageCpc: 3.78,
-      },
-    ];
+    const query = `
+      SELECT
+        segments.device,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions,
+        metrics.ctr,
+        metrics.average_cpc
+      FROM campaign
+      WHERE segments.date BETWEEN '${dateRange.startDate}' AND '${dateRange.endDate}'
+    `;
+
+    try {
+      const results = await executeGaqlQuery(customerId, accessToken, query);
+      
+      // Aggregate by device
+      const deviceMap: Record<string, any> = {};
+      
+      for (const result of results) {
+        const metrics = result.metrics || {};
+        const segments = result.segments || {};
+        const device = segments.device || 'UNKNOWN';
+        
+        if (!deviceMap[device]) {
+          deviceMap[device] = {
+            device: device,
+            impressions: 0,
+            clicks: 0,
+            costMicros: 0,
+            conversions: 0,
+          };
+        }
+        
+        deviceMap[device].impressions += Number(metrics.impressions || 0);
+        deviceMap[device].clicks += Number(metrics.clicks || 0);
+        deviceMap[device].costMicros += Number(metrics.costMicros || 0);
+        deviceMap[device].conversions += Number(metrics.conversions || 0);
+      }
+
+      const deviceNameMap: Record<string, string> = {
+        'MOBILE': 'Mobile',
+        'DESKTOP': 'Desktop',
+        'TABLET': 'Tablet',
+        'CONNECTED_TV': 'Connected TV',
+        'OTHER': 'Other',
+        'UNKNOWN': 'Unknown',
+      };
+
+      return Object.values(deviceMap).map((d: any) => ({
+        device: deviceNameMap[d.device] || d.device,
+        impressions: d.impressions,
+        clicks: d.clicks,
+        cost: microsToValue(d.costMicros),
+        conversions: d.conversions,
+        ctr: d.impressions > 0 ? (d.clicks / d.impressions) * 100 : 0,
+        averageCpc: d.clicks > 0 ? microsToValue(d.costMicros) / d.clicks : 0,
+      }));
+    } catch (error: any) {
+      console.error(`[Google Ads Data Service] Error fetching devices:`, error.message);
+      throw new Error(`Failed to fetch Google Ads device data: ${error.message}`);
+    }
   }
 
   public async getCampaigns(
@@ -181,54 +339,75 @@ class GoogleAdsDataService implements IGoogleAdsDataService {
     dateRange: { startDate: string; endDate: string }
   ): Promise<any> {
     console.log(`[Google Ads Data Service] Fetching campaigns for customer: ${customerId}`);
-    console.log(`[Google Ads Data Service] Date range: ${dateRange.startDate} to ${dateRange.endDate}`);
-    console.log(`[Google Ads Data Service] Developer Token: ${ENV.GOOGLE_ADS_DEVELOPER_TOKEN ? 'Set' : 'Not set'}`);
     
-    // TODO: Implement actual Google Ads API campaign fetching
-    // Query campaign resource with metrics
-    
-    // Mock data for campaigns list
-    return [
-      {
-        id: '1',
-        name: 'Summer Sale Campaign',
-        status: 'ENABLED',
-        impressions: 12500,
-        clicks: 320,
-        cost: 1250.50,
-        conversions: 15,
-        ctr: 2.56,
-        averageCpc: 3.91,
-        conversionRate: 4.69,
-        costPerConversion: 83.37,
-      },
-      {
-        id: '2',
-        name: 'Brand Awareness Campaign',
-        status: 'ENABLED',
-        impressions: 8900,
-        clicks: 245,
-        cost: 980.25,
-        conversions: 12,
-        ctr: 2.75,
-        averageCpc: 4.00,
-        conversionRate: 4.90,
-        costPerConversion: 81.69,
-      },
-      {
-        id: '3',
-        name: 'Product Launch Campaign',
-        status: 'PAUSED',
-        impressions: 0,
-        clicks: 0,
-        cost: 0,
-        conversions: 0,
-        ctr: 0,
-        averageCpc: 0,
-        conversionRate: 0,
-        costPerConversion: 0,
-      },
-    ];
+    const query = `
+      SELECT
+        campaign.id,
+        campaign.name,
+        campaign.status,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions,
+        metrics.ctr,
+        metrics.average_cpc,
+        metrics.conversions_from_interactions_rate,
+        metrics.cost_per_conversion
+      FROM campaign
+      WHERE segments.date BETWEEN '${dateRange.startDate}' AND '${dateRange.endDate}'
+      ORDER BY metrics.clicks DESC
+      LIMIT 50
+    `;
+
+    try {
+      const results = await executeGaqlQuery(customerId, accessToken, query);
+      
+      // Aggregate by campaign
+      const campaignMap: Record<string, any> = {};
+      
+      for (const result of results) {
+        const campaign = result.campaign || {};
+        const metrics = result.metrics || {};
+        const campaignId = campaign.id || '0';
+        
+        if (!campaignMap[campaignId]) {
+          campaignMap[campaignId] = {
+            id: campaignId,
+            name: campaign.name || 'Unknown Campaign',
+            status: campaign.status || 'UNKNOWN',
+            impressions: 0,
+            clicks: 0,
+            costMicros: 0,
+            conversions: 0,
+          };
+        }
+        
+        campaignMap[campaignId].impressions += Number(metrics.impressions || 0);
+        campaignMap[campaignId].clicks += Number(metrics.clicks || 0);
+        campaignMap[campaignId].costMicros += Number(metrics.costMicros || 0);
+        campaignMap[campaignId].conversions += Number(metrics.conversions || 0);
+      }
+
+      return Object.values(campaignMap).map((c: any) => {
+        const cost = microsToValue(c.costMicros);
+        return {
+          id: c.id,
+          name: c.name,
+          status: c.status,
+          impressions: c.impressions,
+          clicks: c.clicks,
+          cost: cost,
+          conversions: c.conversions,
+          ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0,
+          averageCpc: c.clicks > 0 ? cost / c.clicks : 0,
+          conversionRate: c.clicks > 0 ? (c.conversions / c.clicks) * 100 : 0,
+          costPerConversion: c.conversions > 0 ? cost / c.conversions : 0,
+        };
+      });
+    } catch (error: any) {
+      console.error(`[Google Ads Data Service] Error fetching campaigns:`, error.message);
+      throw new Error(`Failed to fetch Google Ads campaigns: ${error.message}`);
+    }
   }
 
   public async getKeywords(
@@ -237,86 +416,60 @@ class GoogleAdsDataService implements IGoogleAdsDataService {
     dateRange: { startDate: string; endDate: string }
   ): Promise<any> {
     console.log(`[Google Ads Data Service] Fetching keywords for customer: ${customerId}`);
-    console.log(`[Google Ads Data Service] Date range: ${dateRange.startDate} to ${dateRange.endDate}`);
     
-    // TODO: Implement actual Google Ads API keywords fetching
-    // Query keyword_view or ad_group_criterion resource
-    
-    // Mock data for keywords list
-    return [
-      {
-        id: '1',
-        keyword: 'hotel booking',
-        matchType: 'BROAD',
-        impressions: 4500,
-        clicks: 125,
-        cost: 490.50,
-        conversions: 8,
-        ctr: 2.78,
-        averageCpc: 3.92,
-        conversionRate: 6.40,
-        costPerConversion: 61.31,
-        qualityScore: 7,
-      },
-      {
-        id: '2',
-        keyword: 'best hotel deals',
-        matchType: 'PHRASE',
-        impressions: 3200,
-        clicks: 95,
-        cost: 380.00,
-        conversions: 6,
-        ctr: 2.97,
-        averageCpc: 4.00,
-        conversionRate: 6.32,
-        costPerConversion: 63.33,
-        qualityScore: 8,
-      },
-      {
-        id: '3',
-        keyword: '[luxury hotels]',
-        matchType: 'EXACT',
-        impressions: 1800,
-        clicks: 65,
-        cost: 280.25,
-        conversions: 5,
-        ctr: 3.61,
-        averageCpc: 4.31,
-        conversionRate: 7.69,
-        costPerConversion: 56.05,
-        qualityScore: 9,
-      },
-      {
-        id: '4',
-        keyword: 'hotel reservation',
-        matchType: 'BROAD',
-        impressions: 2100,
-        clicks: 55,
-        cost: 220.00,
-        conversions: 3,
-        ctr: 2.62,
-        averageCpc: 4.00,
-        conversionRate: 5.45,
-        costPerConversion: 73.33,
-        qualityScore: 6,
-      },
-      {
-        id: '5',
-        keyword: 'cheap hotels',
-        matchType: 'PHRASE',
-        impressions: 1500,
-        clicks: 40,
-        cost: 160.00,
-        conversions: 2,
-        ctr: 2.67,
-        averageCpc: 4.00,
-        conversionRate: 5.00,
-        costPerConversion: 80.00,
-        qualityScore: 5,
-      },
-    ];
+    const query = `
+      SELECT
+        ad_group_criterion.criterion_id,
+        ad_group_criterion.keyword.text,
+        ad_group_criterion.keyword.match_type,
+        ad_group_criterion.quality_info.quality_score,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions,
+        metrics.ctr,
+        metrics.average_cpc,
+        metrics.conversions_from_interactions_rate,
+        metrics.cost_per_conversion
+      FROM keyword_view
+      WHERE segments.date BETWEEN '${dateRange.startDate}' AND '${dateRange.endDate}'
+        AND ad_group_criterion.status != 'REMOVED'
+      ORDER BY metrics.clicks DESC
+      LIMIT 100
+    `;
+
+    try {
+      const results = await executeGaqlQuery(customerId, accessToken, query);
+      
+      return results.map((result: any) => {
+        const criterion = result.adGroupCriterion || {};
+        const keyword = criterion.keyword || {};
+        const qualityInfo = criterion.qualityInfo || {};
+        const metrics = result.metrics || {};
+        const cost = microsToValue(metrics.costMicros || 0);
+        const clicks = Number(metrics.clicks || 0);
+        const conversions = Number(metrics.conversions || 0);
+        
+        return {
+          id: criterion.criterionId || '0',
+          keyword: keyword.text || 'Unknown',
+          matchType: keyword.matchType || 'UNKNOWN',
+          impressions: Number(metrics.impressions || 0),
+          clicks: clicks,
+          cost: cost,
+          conversions: conversions,
+          ctr: Number(metrics.ctr || 0) * 100,
+          averageCpc: microsToValue(metrics.averageCpc || 0),
+          conversionRate: clicks > 0 ? (conversions / clicks) * 100 : 0,
+          costPerConversion: conversions > 0 ? cost / conversions : 0,
+          qualityScore: qualityInfo.qualityScore || null,
+        };
+      });
+    } catch (error: any) {
+      console.error(`[Google Ads Data Service] Error fetching keywords:`, error.message);
+      throw new Error(`Failed to fetch Google Ads keywords: ${error.message}`);
+    }
   }
 }
 
 export default new GoogleAdsDataService();
-

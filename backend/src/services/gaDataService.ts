@@ -108,7 +108,8 @@ class GaDataService implements IGaDataService {
     accessToken: string,
     dimensions: string[],
     metrics: string[],
-    dateRanges: { startDate: string; endDate: string }[]
+    dateRanges: { startDate: string; endDate: string }[],
+    timezone?: string // Optional timezone parameter (e.g., 'Asia/Kolkata' for IST)
   ): Promise<any> {
     // Create a compatible auth client for each request
     const authClient = this.createAuthClient(accessToken);
@@ -126,6 +127,10 @@ class GaDataService implements IGaDataService {
           startDate: range.startDate,
           endDate: range.endDate,
         })),
+        // Keep empty rows to ensure accurate data representation
+        keepEmptyRows: true,
+        // Return property quota info
+        returnPropertyQuota: true,
       };
 
       // Only add dimensions if provided
@@ -138,6 +143,7 @@ class GaDataService implements IGaDataService {
         metrics: requestParams.metrics.map((m: any) => m.name),
         dimensions: requestParams.dimensions?.map((d: any) => d.name) || [],
         dateRanges: requestParams.dateRanges,
+        timezone: timezone || 'Property default',
       });
 
       const [response] = await analyticsClient.runReport(requestParams);
@@ -145,6 +151,7 @@ class GaDataService implements IGaDataService {
       console.log('GA4 API Response:', {
         rowCount: response.rows?.length || 0,
         hasData: (response.rows?.length || 0) > 0,
+        propertyQuota: response.propertyQuota ? 'Present' : 'Not present',
       });
 
       return response;
