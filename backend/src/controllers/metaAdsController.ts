@@ -271,3 +271,159 @@ export const getInsights = asyncHandler(async (req: Request, res: Response): Pro
   }
 });
 
+// Route 6: Get campaigns
+export const getCampaigns = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.query;
+
+  if (!projectId || !startDate || !endDate) {
+    res.status(400).json({
+      success: false,
+      error: 'Project ID, start date, and end date are required',
+    });
+    return;
+  }
+
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+    
+    const project = await projectService.getProjectById(projectId, userId);
+    if (!project || !project.metaAdsAccountId) {
+      res.status(404).json({
+        success: false,
+        error: 'Project or Meta Ads account not found',
+      });
+      return;
+    }
+
+    const accessToken = await metaAdsDataService.getAccessToken(projectId);
+    const campaigns = await metaAdsDataService.getCampaigns(
+      project.metaAdsAccountId,
+      accessToken,
+      { startDate: startDate as string, endDate: endDate as string }
+    );
+
+    res.status(200).json({ success: true, data: campaigns });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Route 7: Get age/gender breakdown
+export const getAgeGenderBreakdown = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.query;
+
+  if (!projectId || !startDate || !endDate) {
+    res.status(400).json({
+      success: false,
+      error: 'Project ID, start date, and end date are required',
+    });
+    return;
+  }
+
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+    
+    const project = await projectService.getProjectById(projectId, userId);
+    if (!project || !project.metaAdsAccountId) {
+      res.status(404).json({
+        success: false,
+        error: 'Project or Meta Ads account not found',
+      });
+      return;
+    }
+
+    const accessToken = await metaAdsDataService.getAccessToken(projectId);
+    const breakdown = await metaAdsDataService.getAgeGenderBreakdown(
+      project.metaAdsAccountId,
+      accessToken,
+      { startDate: startDate as string, endDate: endDate as string }
+    );
+
+    res.status(200).json({ success: true, data: breakdown });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Route 8: Get platform breakdown
+export const getPlatformBreakdown = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.query;
+
+  if (!projectId || !startDate || !endDate) {
+    res.status(400).json({
+      success: false,
+      error: 'Project ID, start date, and end date are required',
+    });
+    return;
+  }
+
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+    
+    const project = await projectService.getProjectById(projectId, userId);
+    if (!project || !project.metaAdsAccountId) {
+      res.status(404).json({
+        success: false,
+        error: 'Project or Meta Ads account not found',
+      });
+      return;
+    }
+
+    const accessToken = await metaAdsDataService.getAccessToken(projectId);
+    const breakdown = await metaAdsDataService.getPlatformBreakdown(
+      project.metaAdsAccountId,
+      accessToken,
+      { startDate: startDate as string, endDate: endDate as string }
+    );
+
+    res.status(200).json({ success: true, data: breakdown });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Route 9: Get daily breakdown for charts
+export const getDailyBreakdown = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.query;
+
+  if (!projectId || !startDate || !endDate) {
+    res.status(400).json({
+      success: false,
+      error: 'Project ID, start date, and end date are required',
+    });
+    return;
+  }
+
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+    
+    const project = await projectService.getProjectById(projectId, userId);
+    if (!project || !project.metaAdsAccountId) {
+      res.status(404).json({
+        success: false,
+        error: 'Project or Meta Ads account not found',
+      });
+      return;
+    }
+
+    const accessToken = await metaAdsDataService.getAccessToken(projectId);
+    const dailyData = await metaAdsDataService.getDailyBreakdown(
+      project.metaAdsAccountId,
+      accessToken,
+      { startDate: startDate as string, endDate: endDate as string }
+    );
+
+    res.status(200).json({ success: true, data: dailyData });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+

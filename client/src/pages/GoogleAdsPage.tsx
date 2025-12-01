@@ -24,6 +24,7 @@ import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
+import ReconnectButton from "@/components/common/ReconnectButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -379,10 +380,17 @@ const GoogleAdsPage = () => {
             </p>
           </div>
         </div>
-        <Button variant="outline" onClick={handleRefresh} disabled={loadingAds}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loadingAds ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <ReconnectButton
+            service="google-ads"
+            projectId={projectId || ''}
+            onReconnectSuccess={() => window.location.reload()}
+          />
+          <Button variant="outline" onClick={handleRefresh} disabled={loadingAds}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loadingAds ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <DateRangeSelector

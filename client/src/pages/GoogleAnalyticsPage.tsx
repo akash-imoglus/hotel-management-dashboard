@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Link2, 
-  RefreshCw, 
+import {
+  Link2,
+  RefreshCw,
   AlertTriangle,
   Users,
   Eye,
@@ -25,6 +25,7 @@ import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
+import ReconnectButton from "@/components/common/ReconnectButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ConnectGoogleAnalytics from "@/components/projects/ConnectGoogleAnalytics";
@@ -144,7 +145,7 @@ const GoogleAnalyticsPage = () => {
     if (!projectId) return;
     setLoadingAnalytics(true);
     setTokenExpired(false);
-    
+
     setChartErrors({
       overview: null,
       channels: null,
@@ -297,7 +298,7 @@ const GoogleAnalyticsPage = () => {
             </Button>
           </CardContent>
         </Card>
-        
+
         {showConnectModal && projectId && (
           <ConnectGoogleAnalytics
             projectId={projectId}
@@ -327,7 +328,7 @@ const GoogleAnalyticsPage = () => {
             <p className="text-sm text-slate-500">Session expired - reconnection required</p>
           </div>
         </div>
-        
+
         <Card className="bg-amber-50 border-amber-200">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -359,7 +360,7 @@ const GoogleAnalyticsPage = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         {showConnectModal && projectId && (
           <ConnectGoogleAnalytics
             projectId={projectId}
@@ -385,7 +386,7 @@ const GoogleAnalyticsPage = () => {
   }));
 
   return (
-    <motion.section 
+    <motion.section
       className="space-y-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -403,10 +404,17 @@ const GoogleAnalyticsPage = () => {
             </p>
           </div>
         </div>
-        <Button variant="outline" onClick={handleRefresh} disabled={loadingAnalytics}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loadingAnalytics ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <ReconnectButton
+            service="google-analytics"
+            projectId={projectId || ''}
+            onReconnectSuccess={fetchProject}
+          />
+          <Button variant="outline" onClick={handleRefresh} disabled={loadingAnalytics}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loadingAnalytics ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <DateRangeSelector
@@ -482,7 +490,7 @@ const GoogleAnalyticsPage = () => {
                   <div>
                     <p className="text-purple-100 text-sm font-medium">Bounce Rate</p>
                     <p className="text-3xl font-bold mt-1">
-                      {((overview.bounceRate || 0) * 100).toFixed(1)}%
+                      {(overview.bounceRate || 0).toFixed(1)}%
                     </p>
                   </div>
                   <div className="p-3 bg-white/20 rounded-xl">
@@ -518,7 +526,7 @@ const GoogleAnalyticsPage = () => {
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Engagement Rate</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">
-                      {((overview.engagementRate || 0) * 100).toFixed(1)}%
+                      {(overview.engagementRate || 0).toFixed(1)}%
                     </p>
                   </div>
                   <div className="p-3 bg-emerald-100 rounded-xl">
@@ -594,7 +602,7 @@ const GoogleAnalyticsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {channels.map((channel, index) => (
-                    <motion.tr 
+                    <motion.tr
                       key={index}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -603,8 +611,8 @@ const GoogleAnalyticsPage = () => {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
+                          <div
+                            className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: COLORS[index % COLORS.length] }}
                           />
                           <span className="font-medium text-slate-900">
@@ -619,7 +627,7 @@ const GoogleAnalyticsPage = () => {
                         {formatNumber(channel.sessions || 0)}
                       </td>
                       <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {((channel.bounceRate || 0) * 100).toFixed(1)}%
+                        {(channel.bounceRate || 0).toFixed(1)}%
                       </td>
                       <td className="px-4 py-4 text-right text-sm text-slate-700">
                         {formatDuration(channel.averageSessionDuration || 0)}
@@ -666,10 +674,10 @@ const GoogleAnalyticsPage = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip 
+                      <Tooltip
                         formatter={(value: number) => [formatNumber(value), 'Sessions']}
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
+                        contentStyle={{
+                          backgroundColor: 'white',
                           border: '1px solid #e2e8f0',
                           borderRadius: '8px',
                           boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
@@ -681,8 +689,8 @@ const GoogleAnalyticsPage = () => {
                 <div className="flex-1 space-y-2">
                   {channelChartData.map((channel, index) => (
                     <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
+                      <div
+                        className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: channel.color }}
                       />
                       <span className="flex-1 text-sm font-medium text-slate-700 truncate">{channel.name}</span>
@@ -713,10 +721,10 @@ const GoogleAnalyticsPage = () => {
                   <BarChart data={deviceChartData} layout="vertical">
                     <XAxis type="number" tickFormatter={formatNumber} />
                     <YAxis type="category" dataKey="name" width={80} />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value: number) => [formatNumber(value), 'Sessions']}
-                      contentStyle={{ 
-                        backgroundColor: 'white', 
+                      contentStyle={{
+                        backgroundColor: 'white',
                         border: '1px solid #e2e8f0',
                         borderRadius: '8px'
                       }}
@@ -753,7 +761,7 @@ const GoogleAnalyticsPage = () => {
               {geo.slice(0, 12).map((country, index) => {
                 const code = getCountryCode(country.country);
                 return (
-                  <motion.div 
+                  <motion.div
                     key={country.country}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -805,7 +813,7 @@ const GoogleAnalyticsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {landingPages.slice(0, 10).map((page, index) => (
-                    <motion.tr 
+                    <motion.tr
                       key={index}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -824,7 +832,7 @@ const GoogleAnalyticsPage = () => {
                         {formatNumber(page.totalUsers || 0)}
                       </td>
                       <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {((page.bounceRate || 0) * 100).toFixed(1)}%
+                        {(page.bounceRate || 0).toFixed(1)}%
                       </td>
                       <td className="px-6 py-4 text-right text-sm text-slate-700">
                         {formatDuration(page.averageSessionDuration || 0)}

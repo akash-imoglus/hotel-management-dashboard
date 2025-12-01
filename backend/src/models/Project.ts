@@ -19,6 +19,9 @@ export interface IProject extends Document {
     accessToken?: string;
     connectedAt?: Date;
   };
+  // AI Analysis Cache
+  overviewAnalysis?: string;
+  overviewGeneratedAt?: Date;
   userId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -91,6 +94,13 @@ const projectSchema: Schema<IProject> = new Schema(
       connectedAt: {
         type: Date,
       },
+    },
+    // AI Analysis Cache
+    overviewAnalysis: {
+      type: String,
+    },
+    overviewGeneratedAt: {
+      type: Date,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,

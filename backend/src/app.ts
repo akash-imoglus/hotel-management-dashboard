@@ -17,6 +17,7 @@ import metaAdsRoutes from './routes/metaAdsRoutes';
 import instagramRoutes from './routes/instagramRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import linkedinRoutes from './routes/linkedinRoutes';
+import aiAnalysisRoutes from './routes/aiAnalysisRoutes';
 
 // Import middleware
 import { errorHandler } from './middleware/errorMiddleware';
@@ -47,6 +48,7 @@ app.use('/api/meta-ads', metaAdsRoutes);
 app.use('/api/instagram', instagramRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/linkedin', linkedinRoutes);
+app.use('/api/ai', aiAnalysisRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

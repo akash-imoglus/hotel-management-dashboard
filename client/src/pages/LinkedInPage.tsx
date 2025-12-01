@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
+import ReconnectButton from "@/components/common/ReconnectButton";
 import EmptyState from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -231,14 +232,21 @@ const LinkedInPage = () => {
             </p>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={handleRefresh} 
-          disabled={loadingLinkedIn}
-          className="border-slate-200 text-slate-700 hover:bg-slate-50"
-        >
-          Refresh data
-        </Button>
+        <div className="flex items-center gap-2">
+          <ReconnectButton
+            service="linkedin"
+            projectId={projectId || ''}
+            onReconnectSuccess={() => window.location.reload()}
+          />
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh} 
+            disabled={loadingLinkedIn}
+            className="border-slate-200 text-slate-700 hover:bg-slate-50"
+          >
+            Refresh data
+          </Button>
+        </div>
       </motion.div>
 
       {/* Overview Cards */}

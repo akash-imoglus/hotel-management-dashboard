@@ -21,6 +21,7 @@ import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
+import ReconnectButton from "@/components/common/ReconnectButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,10 +34,19 @@ import type { DateRangePreset } from "@/constants/dateRanges";
 // Color palette for charts
 const COLORS = ['#10B981', '#06B6D4', '#8B5CF6', '#F59E0B', '#EF4444'];
 
-const formatNumber = (num: number) => {
+const formatNumber = (num: number | null | undefined) => {
+  if (num === null || num === undefined || isNaN(num)) return '0';
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
   return num.toLocaleString();
+};
+
+// Safe number formatting helpers
+const safeToFixed = (value: number | string | null | undefined, decimals: number = 2): string => {
+  if (value === null || value === undefined) return '0';
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '0';
+  return num.toFixed(decimals);
 };
 
 // Country code mapping
@@ -81,6 +91,8 @@ const GoogleSearchConsolePage = () => {
     devices: null,
   });
 
+  const [rangePreset, setRangePreset] = useState<DateRangePreset>("last28days");
+  const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
   const [dateRange, setDateRange] = useState<DateRange>(buildDateRange("last28days"));
   const [querySearch, setQuerySearch] = useState<string>("");
   const [pageSearch, setPageSearch] = useState<string>("");
@@ -189,8 +201,9 @@ const GoogleSearchConsolePage = () => {
     void fetchSearchConsoleData();
   }, [fetchSearchConsoleData]);
 
-  const handleDateRangeChange = (preset: DateRangePreset) => {
-    setDateRange(buildDateRange(preset));
+  const handleApplyRange = () => {
+    const newRange = buildDateRange(rangePreset, customRange);
+    setDateRange(newRange);
   };
 
   const handleConnectSuccess = () => {
@@ -270,17 +283,35 @@ const GoogleSearchConsolePage = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Search Console</h1>
-            <p className="text-sm text-slate-500">{project.searchConsoleSiteUrl}</p>
+            <p className="text-sm text-slate-500">
+              {project.searchConsoleSiteUrl} • {dateRange.startDate} to {dateRange.endDate}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <DateRangeSelector onDateRangeChange={handleDateRangeChange} />
+        <div className="flex items-center gap-2">
+          <ReconnectButton
+            service="google-search-console"
+            projectId={projectId || ''}
+            onReconnectSuccess={() => window.location.reload()}
+          />
           <Button variant="outline" onClick={fetchSearchConsoleData} disabled={loadingData}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loadingData ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
       </div>
+
+      {/* Date Range Selector */}
+      <DateRangeSelector
+        preset={rangePreset}
+        onPresetChange={setRangePreset}
+        customRange={customRange}
+        onCustomChange={(field, value) =>
+          setCustomRange((prev) => ({ ...prev, [field]: value }))
+        }
+        onApply={handleApplyRange}
+        disabled={loadingData}
+      />
 
       {/* Overview Cards */}
       {loadingData && !overview ? (
@@ -325,7 +356,7 @@ const GoogleSearchConsolePage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-violet-100 text-sm font-medium">CTR</p>
-                    <p className="text-3xl font-bold mt-1">{overview.ctr.toFixed(2)}%</p>
+                    <p className="text-3xl font-bold mt-1">{safeToFixed(overview.ctr, 2)}%</p>
                   </div>
                   <div className="p-3 bg-white/20 rounded-xl">
                     <TrendingUp className="h-6 w-6" />
@@ -341,7 +372,7 @@ const GoogleSearchConsolePage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-amber-100 text-sm font-medium">Avg Position</p>
-                    <p className="text-3xl font-bold mt-1">{overview.position.toFixed(1)}</p>
+                    <p className="text-3xl font-bold mt-1">{safeToFixed(overview.position, 1)}</p>
                   </div>
                   <div className="p-3 bg-white/20 rounded-xl">
                     <Target className="h-6 w-6" />
@@ -444,7 +475,7 @@ const GoogleSearchConsolePage = () => {
                     <span className="flex-1 text-sm font-medium text-slate-700">{country.country}</span>
                     <div className="text-right">
                       <p className="text-sm font-bold text-slate-900">{formatNumber(country.clicks)} clicks</p>
-                      <p className="text-xs text-slate-500">Pos: {country.position.toFixed(1)}</p>
+                      <p className="text-xs text-slate-500">Pos: {safeToFixed(country.position, 1)}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -512,19 +543,19 @@ const GoogleSearchConsolePage = () => {
                         {formatNumber(query.impressions)}
                       </td>
                       <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {query.ctr.toFixed(2)}%
+                        {safeToFixed(query.ctr, 2)}%
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className={`inline-flex items-center justify-center w-10 h-7 rounded-full text-sm font-bold ${
-                          query.position <= 3 
+                          (Number(query.position) || 0) <= 3 
                             ? 'bg-emerald-100 text-emerald-700'
-                            : query.position <= 10
+                            : (Number(query.position) || 0) <= 10
                             ? 'bg-cyan-100 text-cyan-700'
-                            : query.position <= 20
+                            : (Number(query.position) || 0) <= 20
                             ? 'bg-amber-100 text-amber-700'
                             : 'bg-slate-100 text-slate-600'
                         }`}>
-                          {query.position.toFixed(1)}
+                          {safeToFixed(query.position, 1)}
                         </span>
                       </td>
                     </motion.tr>
@@ -596,19 +627,19 @@ const GoogleSearchConsolePage = () => {
                         {formatNumber(page.impressions)}
                       </td>
                       <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {page.ctr.toFixed(2)}%
+                        {safeToFixed(page.ctr, 2)}%
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className={`inline-flex items-center justify-center w-10 h-7 rounded-full text-sm font-bold ${
-                          page.position <= 3 
+                          (Number(page.position) || 0) <= 3 
                             ? 'bg-emerald-100 text-emerald-700'
-                            : page.position <= 10
+                            : (Number(page.position) || 0) <= 10
                             ? 'bg-cyan-100 text-cyan-700'
-                            : page.position <= 20
+                            : (Number(page.position) || 0) <= 20
                             ? 'bg-amber-100 text-amber-700'
                             : 'bg-slate-100 text-slate-600'
                         }`}>
-                          {page.position.toFixed(1)}
+                          {safeToFixed(page.position, 1)}
                         </span>
                       </td>
                     </motion.tr>

@@ -27,6 +27,7 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
+  Sparkles,
 } from "lucide-react";
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import LoadingState from "@/components/common/LoadingState";
@@ -34,6 +35,7 @@ import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import MagicSuggestionModal from "@/components/dashboard/MagicSuggestionModal";
 import api from "@/lib/api";
 import type { Project } from "@/types";
 
@@ -86,6 +88,7 @@ const DashboardOverviewPage = () => {
     seo: null,
   });
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [showMagicSuggestions, setShowMagicSuggestions] = useState(false);
 
   // Date range for the last 7 days
   const getDateRange = () => {
@@ -386,6 +389,15 @@ const DashboardOverviewPage = () => {
               {connectedCount}/{totalPlatforms}
             </p>
           </div>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => setShowMagicSuggestions(true)}
+            className="gap-2 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 hover:from-violet-700 hover:via-purple-700 hover:to-fuchsia-700 text-white shadow-lg shadow-violet-500/25 border-0"
+          >
+            <Sparkles className="h-4 w-4" />
+            Magic Suggestions
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -831,11 +843,10 @@ const DashboardOverviewPage = () => {
                 <button
                   key={platform.name}
                   onClick={() => navigate(`/dashboard/${projectId}/${platform.path}`)}
-                  className={`p-3 rounded-xl border-2 transition-all text-left ${
-                    platform.connected
-                      ? "border-green-200 bg-green-50 hover:bg-green-100"
-                      : "border-slate-200 bg-slate-50 hover:bg-slate-100"
-                  }`}
+                  className={`p-3 rounded-xl border-2 transition-all text-left ${platform.connected
+                    ? "border-green-200 bg-green-50 hover:bg-green-100"
+                    : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium text-slate-700">{platform.name}</span>
@@ -854,6 +865,14 @@ const DashboardOverviewPage = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Magic Suggestion Modal */}
+      <MagicSuggestionModal
+        isOpen={showMagicSuggestions}
+        onClose={() => setShowMagicSuggestions(false)}
+        projectId={projectId!}
+        metrics={metrics}
+      />
     </motion.section>
   );
 };

@@ -22,6 +22,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import ReactCountryFlag from "react-country-flag";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
+import ReconnectButton from "@/components/common/ReconnectButton";
 import EmptyState from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -187,10 +188,17 @@ const InstagramPage = () => {
             </p>
           </div>
         </div>
-        <Button variant="outline" onClick={fetchInstagramData} disabled={loadingData}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loadingData ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <ReconnectButton
+            service="instagram"
+            projectId={projectId || ''}
+            onReconnectSuccess={() => window.location.reload()}
+          />
+          <Button variant="outline" onClick={fetchInstagramData} disabled={loadingData}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loadingData ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Data */}

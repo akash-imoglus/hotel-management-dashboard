@@ -102,7 +102,7 @@ export const handleCallbackGet = asyncHandler(async (req: Request, res: Response
 });
 
 export const saveFacebookPage = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { projectId, pageId } = req.body;
+  const { projectId, pageId, pageAccessToken } = req.body;
 
   if (!projectId || !pageId) {
     res.status(400).json({
@@ -124,6 +124,39 @@ export const saveFacebookPage = asyncHandler(async (req: Request, res: Response)
         error: 'Project not found',
       });
       return;
+    }
+
+    // Get the Facebook connection to update it with page token
+    const connection = await facebookAuthService.getConnectionByProject(projectId);
+    if (!connection) {
+      res.status(400).json({
+        success: false,
+        error: 'Facebook connection not found. Please reconnect.',
+      });
+      return;
+    }
+
+    // If no page access token provided, fetch it from the pages list
+    let actualPageToken = pageAccessToken;
+    if (!actualPageToken) {
+      console.log(`[Facebook Save Page] No page token provided, fetching from pages list...`);
+      const accessToken = await facebookDataService.getAccessToken(projectId);
+      const pages = await facebookAuthService.getFacebookPages(accessToken);
+      const selectedPage = pages.find(p => p.id === pageId);
+      if (selectedPage?.access_token) {
+        actualPageToken = selectedPage.access_token;
+        console.log(`[Facebook Save Page] Found page token for page ${pageId}`);
+      } else {
+        console.warn(`[Facebook Save Page] Could not find page token for page ${pageId}`);
+      }
+    }
+
+    // Update the Facebook connection with page access token
+    if (actualPageToken) {
+      connection.pageAccessToken = actualPageToken;
+      connection.pageId = pageId;
+      await connection.save();
+      console.log(`[Facebook Save Page] Saved page access token for page ${pageId}`);
     }
 
     // Update project with Facebook page ID
@@ -150,6 +183,7 @@ export const saveFacebookPage = asyncHandler(async (req: Request, res: Response)
       },
     });
   } catch (error: any) {
+    console.error(`[Facebook Save Page] Error:`, error);
     res.status(400).json({
       success: false,
       error: error.message,
@@ -242,8 +276,8 @@ export const getFacebookOverview = asyncHandler(async (req: Request, res: Respon
       return;
     }
 
-    // Get access token
-    const accessToken = await facebookDataService.getAccessToken(projectId);
+    // Get PAGE access token (required for Page Insights API)
+    const accessToken = await facebookDataService.getPageAccessToken(projectId);
 
     // Fetch overview metrics
     const metrics = await facebookDataService.getOverviewMetrics(
@@ -264,6 +298,123 @@ export const getFacebookOverview = asyncHandler(async (req: Request, res: Respon
       success: false,
       error: error.message,
     });
+  }
+});
+
+// Get time series data for charts
+export const getFacebookTimeSeries = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.query;
+
+  if (!projectId || !startDate || !endDate) {
+    res.status(400).json({
+      success: false,
+      error: 'Project ID, start date, and end date are required',
+    });
+    return;
+  }
+
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+    
+    const project = await projectService.getProjectById(projectId, userId);
+    if (!project || !project.facebookPageId) {
+      res.status(404).json({
+        success: false,
+        error: 'Project or Facebook page not found',
+      });
+      return;
+    }
+
+    const accessToken = await facebookDataService.getPageAccessToken(projectId);
+    const data = await facebookDataService.getTimeSeriesData(
+      project.facebookPageId,
+      accessToken,
+      { startDate: startDate as string, endDate: endDate as string }
+    );
+
+    res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Get follow/unfollow data for charts
+export const getFacebookFollowData = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.query;
+
+  if (!projectId || !startDate || !endDate) {
+    res.status(400).json({
+      success: false,
+      error: 'Project ID, start date, and end date are required',
+    });
+    return;
+  }
+
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+    
+    const project = await projectService.getProjectById(projectId, userId);
+    if (!project || !project.facebookPageId) {
+      res.status(404).json({
+        success: false,
+        error: 'Project or Facebook page not found',
+      });
+      return;
+    }
+
+    const accessToken = await facebookDataService.getPageAccessToken(projectId);
+    const data = await facebookDataService.getFollowData(
+      project.facebookPageId,
+      accessToken,
+      { startDate: startDate as string, endDate: endDate as string }
+    );
+
+    res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Get posts with metrics
+export const getFacebookPosts = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.query;
+
+  if (!projectId || !startDate || !endDate) {
+    res.status(400).json({
+      success: false,
+      error: 'Project ID, start date, and end date are required',
+    });
+    return;
+  }
+
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+    
+    const project = await projectService.getProjectById(projectId, userId);
+    if (!project || !project.facebookPageId) {
+      res.status(404).json({
+        success: false,
+        error: 'Project or Facebook page not found',
+      });
+      return;
+    }
+
+    const accessToken = await facebookDataService.getPageAccessToken(projectId);
+    const data = await facebookDataService.getPosts(
+      project.facebookPageId,
+      accessToken,
+      { startDate: startDate as string, endDate: endDate as string }
+    );
+
+    res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
   }
 });
 

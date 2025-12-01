@@ -4,6 +4,8 @@ export interface IFacebookConnection extends Document {
   projectId: mongoose.Types.ObjectId;
   refreshToken: string;
   accessToken?: string;
+  pageAccessToken?: string; // Page-level access token for insights
+  pageId?: string; // Selected page ID
   expiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -22,6 +24,12 @@ const facebookConnectionSchema: Schema<IFacebookConnection> = new Schema(
       required: true,
     },
     accessToken: {
+      type: String,
+    },
+    pageAccessToken: {
+      type: String,
+    },
+    pageId: {
       type: String,
     },
     expiresAt: {

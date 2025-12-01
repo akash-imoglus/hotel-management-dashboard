@@ -69,4 +69,6 @@ export const ENV = {
   LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID || '',
   LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET || '',
   LINKEDIN_REDIRECT_URL: process.env.LINKEDIN_REDIRECT_URL || 'http://localhost:3000/api/linkedin/callback',
+  // OpenRouter AI
+  OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
 };

@@ -165,9 +165,15 @@ const ConnectFacebook = ({ projectId, onSuccess, onClose }: ConnectFacebookProps
     try {
       setLoading(true);
       setError(null);
+      
+      // Find the selected page to get its access token
+      const selectedPage = pages.find(p => p.id === selectedPageId);
+      const pageAccessToken = selectedPage?.access_token;
+      
       const response = await api.post<{ success: boolean; data: any }>("/facebook/page", {
         projectId,
         pageId: selectedPageId,
+        pageAccessToken, // Send the page access token for insights
       });
       
       console.log("Save page response:", response.data);

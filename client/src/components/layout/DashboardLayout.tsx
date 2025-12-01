@@ -11,15 +11,15 @@ const DashboardLayout = () => {
       <div className="fixed top-0 left-0 right-0 z-50 h-20">
         <Header />
       </div>
-      
+
       {/* Content Container */}
       <div className="flex flex-1 pt-20 overflow-hidden">
         {/* Permanent Main Sidebar */}
         <MainSidebar />
-        
+
         {/* Project Selector with Project Details and Insights */}
         <ProjectSelector />
-        
+
         {/* Main Content Area */}
         <motion.main
           initial={{ opacity: 0, x: 16 }}

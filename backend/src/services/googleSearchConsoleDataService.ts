@@ -2,9 +2,8 @@ import { ENV } from '../config/env';
 import googleSearchConsoleAuthService from './googleSearchConsoleAuthService';
 import { IGoogleSearchConsoleConnection } from '../models/GoogleSearchConsoleConnection';
 
-// Google Search Console API
+// Google Search Console API - use webmasters/v3 endpoint
 const SEARCH_CONSOLE_API_BASE = 'https://www.googleapis.com/webmasters/v3';
-const SEARCH_ANALYTICS_API_BASE = 'https://searchconsole.googleapis.com/v1';
 
 export interface IGoogleSearchConsoleDataService {
   getAccessToken(projectId: string): Promise<string>;
@@ -41,9 +40,11 @@ const executeSearchAnalyticsQuery = async (
   accessToken: string,
   requestBody: any
 ): Promise<any> => {
-  // Encode the site URL properly
+  // Encode the site URL properly for Google's API
+  // For domain properties, use the format: sc-domain:example.com
+  // For URL prefix properties, use the full URL
   const encodedSiteUrl = encodeURIComponent(siteUrl);
-  const url = `${SEARCH_ANALYTICS_API_BASE}/sites/${encodedSiteUrl}/searchAnalytics/query`;
+  const url = `${SEARCH_CONSOLE_API_BASE}/sites/${encodedSiteUrl}/searchAnalytics/query`;
   
   console.log(`[Search Console API] Querying: ${siteUrl}`);
   console.log(`[Search Console API] Request:`, JSON.stringify(requestBody, null, 2));
@@ -64,7 +65,7 @@ const executeSearchAnalyticsQuery = async (
       throw new Error(`Search Console API error: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { rows?: any[]; responseAggregationType?: string };
     console.log(`[Search Console API] Retrieved ${data.rows?.length || 0} rows`);
     return data;
   } catch (error: any) {
@@ -175,8 +176,8 @@ class GoogleSearchConsoleDataService implements IGoogleSearchConsoleDataService 
       return {
         clicks: Math.round(row.clicks || 0),
         impressions: Math.round(row.impressions || 0),
-        ctr: ((row.ctr || 0) * 100).toFixed(2),
-        position: (row.position || 0).toFixed(1),
+        ctr: Number(((row.ctr || 0) * 100).toFixed(2)),
+        position: Number((row.position || 0).toFixed(1)),
       };
     } catch (error: any) {
       console.error(`[Search Console Data Service] Error fetching analytics:`, error.message);
@@ -210,8 +211,8 @@ class GoogleSearchConsoleDataService implements IGoogleSearchConsoleDataService 
         query: row.keys?.[0] || 'Unknown',
         clicks: Math.round(row.clicks || 0),
         impressions: Math.round(row.impressions || 0),
-        ctr: ((row.ctr || 0) * 100).toFixed(2),
-        position: (row.position || 0).toFixed(1),
+        ctr: Number(((row.ctr || 0) * 100).toFixed(2)),
+        position: Number((row.position || 0).toFixed(1)),
       }));
     } catch (error: any) {
       console.error(`[Search Console Data Service] Error fetching queries:`, error.message);
@@ -257,8 +258,8 @@ class GoogleSearchConsoleDataService implements IGoogleSearchConsoleDataService 
           fullUrl: fullUrl,
           clicks: Math.round(row.clicks || 0),
           impressions: Math.round(row.impressions || 0),
-          ctr: ((row.ctr || 0) * 100).toFixed(2),
-          position: (row.position || 0).toFixed(1),
+          ctr: Number(((row.ctr || 0) * 100).toFixed(2)),
+          position: Number((row.position || 0).toFixed(1)),
         };
       });
     } catch (error: any) {
@@ -296,8 +297,8 @@ class GoogleSearchConsoleDataService implements IGoogleSearchConsoleDataService 
           countryCode: countryCode3to2[countryCode3] || countryCode3.toUpperCase(),
           clicks: Math.round(row.clicks || 0),
           impressions: Math.round(row.impressions || 0),
-          ctr: ((row.ctr || 0) * 100).toFixed(2),
-          position: (row.position || 0).toFixed(1),
+          ctr: Number(((row.ctr || 0) * 100).toFixed(2)),
+          position: Number((row.position || 0).toFixed(1)),
         };
       });
     } catch (error: any) {
@@ -340,8 +341,8 @@ class GoogleSearchConsoleDataService implements IGoogleSearchConsoleDataService 
           device: deviceNameMap[device] || device,
           clicks: Math.round(row.clicks || 0),
           impressions: Math.round(row.impressions || 0),
-          ctr: ((row.ctr || 0) * 100).toFixed(2),
-          position: (row.position || 0).toFixed(1),
+          ctr: Number(((row.ctr || 0) * 100).toFixed(2)),
+          position: Number((row.position || 0).toFixed(1)),
         };
       });
     } catch (error: any) {

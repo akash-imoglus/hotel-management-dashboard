@@ -2,8 +2,8 @@ import { ENV } from '../config/env';
 import googleAdsAuthService from './googleAdsAuthService';
 import { IGoogleAdsConnection } from '../models/GoogleAdsConnection';
 
-// Google Ads API v16
-const GOOGLE_ADS_API_VERSION = 'v16';
+// Google Ads API v18 (current stable version)
+const GOOGLE_ADS_API_VERSION = 'v18';
 const GOOGLE_ADS_API_BASE_URL = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}`;
 
 export interface IGoogleAdsDataService {
@@ -40,17 +40,25 @@ const formatCustomerId = (customerId: string): string => {
   return customerId.replace(/-/g, '');
 };
 
-// Helper to execute GAQL query
+// Helper to execute GAQL query using the search endpoint
 const executeGaqlQuery = async (
   customerId: string,
   accessToken: string,
   query: string
 ): Promise<any[]> => {
   const formattedCustomerId = formatCustomerId(customerId);
-  const url = `${GOOGLE_ADS_API_BASE_URL}/customers/${formattedCustomerId}/googleAds:searchStream`;
+  // Use 'search' endpoint (not searchStream) for standard REST API calls
+  const url = `${GOOGLE_ADS_API_BASE_URL}/customers/${formattedCustomerId}/googleAds:search`;
   
   console.log(`[Google Ads API] Executing query for customer: ${formattedCustomerId}`);
+  console.log(`[Google Ads API] URL: ${url}`);
   console.log(`[Google Ads API] Query: ${query.substring(0, 200)}...`);
+  
+  // Check for developer token
+  if (!ENV.GOOGLE_ADS_DEVELOPER_TOKEN) {
+    console.error(`[Google Ads API] Missing developer token!`);
+    throw new Error('Google Ads Developer Token is not configured. Please add GOOGLE_ADS_DEVELOPER_TOKEN to your .env file.');
+  }
   
   try {
     const response = await fetch(url, {
@@ -58,29 +66,30 @@ const executeGaqlQuery = async (
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        'developer-token': ENV.GOOGLE_ADS_DEVELOPER_TOKEN || '',
-        'login-customer-id': formattedCustomerId, // For MCC accounts, use the MCC ID
+        'developer-token': ENV.GOOGLE_ADS_DEVELOPER_TOKEN,
+        'login-customer-id': formattedCustomerId,
       },
       body: JSON.stringify({ query }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[Google Ads API] Error response:`, errorText);
-      throw new Error(`Google Ads API error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    
-    // searchStream returns array of results
-    const results: any[] = [];
-    if (Array.isArray(data)) {
-      for (const batch of data) {
-        if (batch.results) {
-          results.push(...batch.results);
-        }
+      console.error(`[Google Ads API] Error response (${response.status}):`, errorText);
+      
+      // Parse error for better messaging
+      try {
+        const errorJson = JSON.parse(errorText);
+        const errorMessage = errorJson.error?.message || errorText;
+        throw new Error(`Google Ads API error: ${errorMessage}`);
+      } catch {
+        throw new Error(`Google Ads API error: ${response.status} - ${errorText.substring(0, 200)}`);
       }
     }
+
+    const data = await response.json() as { results?: any[]; nextPageToken?: string };
+    
+    // search endpoint returns { results: [...], nextPageToken?: string }
+    const results: any[] = data.results || [];
     
     console.log(`[Google Ads API] Retrieved ${results.length} results`);
     return results;
@@ -194,6 +203,18 @@ class GoogleAdsDataService implements IGoogleAdsDataService {
       };
     } catch (error: any) {
       console.error(`[Google Ads Data Service] Error fetching overview:`, error.message);
+      
+      // Check for common API errors and provide helpful messages
+      if (error.message.includes('UNIMPLEMENTED')) {
+        throw new Error('Google Ads API access pending approval. Your developer token is in Test Account mode. Apply for Standard Access at https://ads.google.com/aw/apicenter to use with production accounts.');
+      }
+      if (error.message.includes('PERMISSION_DENIED')) {
+        throw new Error('Permission denied. Make sure your Google Ads account has proper access to this customer ID.');
+      }
+      if (error.message.includes('INVALID_CUSTOMER_ID')) {
+        throw new Error('Invalid Customer ID. Please check the Google Ads Customer ID format (XXX-XXX-XXXX without dashes).');
+      }
+      
       throw new Error(`Failed to fetch Google Ads overview: ${error.message}`);
     }
   }
