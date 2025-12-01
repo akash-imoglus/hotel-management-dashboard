@@ -1,27 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Youtube, 
-  Eye, 
-  Users, 
-  ThumbsUp, 
+import {
+  Youtube,
+  Eye,
+  Users,
+  ThumbsUp,
   Share2,
   Play,
   TrendingUp,
   RefreshCw,
   Link2
 } from "lucide-react";
-import { 
-  PieChart, 
-  Pie, 
-  Cell, 
+import {
+  PieChart,
+  Pie,
+  Cell,
   LineChart,
   Line,
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
   Legend,
   CartesianGrid
 } from "recharts";
@@ -45,9 +45,26 @@ interface YouTubeOverviewMetrics {
   shares: number;
   subscribersGained: number;
   subscribersLost: number;
+  currentSubscribers: number;
   estimatedMinutesWatched: number;
   averageViewDuration: number;
   averageViewPercentage: number;
+}
+
+interface YouTubeContent {
+  content_type: 'video' | 'shorts' | 'playlist';
+  id: string;
+  title: string;
+  thumbnail: string;
+  published_at: string;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  estimatedMinutesWatched: number;
+  averageViewDuration: number;
+  duration: { minutes?: number; seconds: number };
+  player: string;
 }
 
 interface YouTubeVideoData {
@@ -100,11 +117,6 @@ const formatDate = (dateStr: string) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-const formatFullDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: '2-digit' });
-};
-
 const YouTubePage = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<Project | null>(null);
@@ -113,7 +125,7 @@ const YouTubePage = () => {
   const [showConnectModal, setShowConnectModal] = useState(false);
 
   const [overview, setOverview] = useState<YouTubeOverviewMetrics | null>(null);
-  const [topVideos, setTopVideos] = useState<YouTubeVideoData[]>([]);
+  const [topContent, setTopContent] = useState<YouTubeContent[]>([]);
   const [trafficSources, setTrafficSources] = useState<YouTubeTrafficSource[]>([]);
   const [dailyData, setDailyData] = useState<YouTubeDailyData[]>([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -123,6 +135,7 @@ const YouTubePage = () => {
   const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
   const [dateRange, setDateRange] = useState<DateRange>(buildDateRange("7d"));
   const [activeTab, setActiveTab] = useState<'content' | 'audience'>('content');
+  const [contentType, setContentType] = useState<'video' | 'shorts' | 'playlist'>('video');
 
   const fetchProject = useCallback(async () => {
     if (!projectId) return;
@@ -153,16 +166,18 @@ const YouTubePage = () => {
 
     try {
       // Fetch all data in parallel
-      const [overviewRes, videosRes, sourcesRes] = await Promise.all([
+      const [overviewRes, sourcesRes, contentRes] = await Promise.all([
         api.get<{ success: boolean; data: YouTubeOverviewMetrics }>(`/youtube/${projectId}/overview`, params),
-        api.get<{ success: boolean; data: YouTubeVideoData[] }>(`/youtube/${projectId}/top-videos`, params),
         api.get<{ success: boolean; data: YouTubeTrafficSource[] }>(`/youtube/${projectId}/traffic-sources`, params),
+        api.get<{ success: boolean; data: YouTubeContent[] }>(`/youtube/${projectId}/top-content`, {
+          params: { ...params.params, contentType }
+        }),
       ]);
 
       if (overviewRes.data.success) setOverview(overviewRes.data.data);
-      if (videosRes.data.success) setTopVideos(videosRes.data.data || []);
       if (sourcesRes.data.success) setTrafficSources(sourcesRes.data.data || []);
-      
+      if (contentRes.data.success) setTopContent(contentRes.data.data || []);
+
       // Generate mock daily data from overview for chart (if real daily endpoint doesn't exist)
       // This can be replaced with a real /youtube/:projectId/daily endpoint
       const days = 7;
@@ -187,7 +202,7 @@ const YouTubePage = () => {
     } finally {
       setLoadingData(false);
     }
-  }, [projectId, project?.youtubeChannelId, dateRange]);
+  }, [projectId, project?.youtubeChannelId, dateRange, contentType]);
 
   useEffect(() => {
     if (project?.youtubeChannelId) {
@@ -262,7 +277,7 @@ const YouTubePage = () => {
   }
 
   return (
-    <motion.section 
+    <motion.section
       className="space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -276,7 +291,7 @@ const YouTubePage = () => {
           <div>
             <p className="text-sm text-white/80">{project.name}</p>
             <h1 className="text-2xl font-bold">YouTube</h1>
-            <p className="text-xs text-white/70">{overview?.subscribersGained || 0} Subscribers (gained)</p>
+            <p className="text-xs text-white/70">{formatNumber(overview?.currentSubscribers || 0)} Subscribers</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -315,21 +330,19 @@ const YouTubePage = () => {
       <div className="flex gap-2 border-b border-slate-200">
         <button
           onClick={() => setActiveTab('content')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-            activeTab === 'content'
-              ? 'border-red-500 text-red-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${activeTab === 'content'
+            ? 'border-red-500 text-red-600'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           Content
         </button>
         <button
           onClick={() => setActiveTab('audience')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-            activeTab === 'audience'
-              ? 'border-red-500 text-red-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${activeTab === 'audience'
+            ? 'border-red-500 text-red-600'
+            : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
         >
           Audience
         </button>
@@ -342,24 +355,68 @@ const YouTubePage = () => {
       ) : overview ? (
         <>
           {/* Content Type Tabs (Videos, Shorts, Playlists) */}
-          <Card className="bg-white border border-slate-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-8">
-                <div className="flex-1 text-center border-b-2 border-red-500 pb-2">
-                  <p className="text-xs text-slate-500 uppercase">Videos</p>
-                  <Play className="h-5 w-5 mx-auto text-red-500 mt-1" />
+          {/* Content Type Tabs (Videos, Shorts, Playlists) */}
+          <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+            <div className="flex items-center justify-between gap-8 relative">
+              {/* Progress Bar Background */}
+              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-slate-100"></div>
+
+              {/* Videos Tab */}
+              <button
+                onClick={() => setContentType('video')}
+                className={`flex-1 text-center pb-4 relative transition-all ${contentType === 'video' ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
+              >
+                <p className={`text-xs font-bold uppercase mb-2 ${contentType === 'video' ? 'text-red-600' : 'text-slate-500'}`}>Videos</p>
+                <div className={`flex justify-center ${contentType === 'video' ? 'text-red-600' : 'text-slate-400'}`}>
+                  <Play className="h-6 w-6" />
                 </div>
-                <div className="flex-1 text-center pb-2 opacity-50">
-                  <p className="text-xs text-slate-500 uppercase">Shorts</p>
-                  <Play className="h-5 w-5 mx-auto text-slate-400 mt-1" />
+                {contentType === 'video' && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"
+                  />
+                )}
+              </button>
+
+              {/* Shorts Tab */}
+              <button
+                onClick={() => setContentType('shorts')}
+                className={`flex-1 text-center pb-4 relative transition-all ${contentType === 'shorts' ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
+              >
+                <p className={`text-xs font-bold uppercase mb-2 ${contentType === 'shorts' ? 'text-red-600' : 'text-slate-500'}`}>Shorts</p>
+                <div className={`flex justify-center ${contentType === 'shorts' ? 'text-red-600' : 'text-slate-400'}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6">
+                    <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
                 </div>
-                <div className="flex-1 text-center pb-2 opacity-50">
-                  <p className="text-xs text-slate-500 uppercase">Playlists</p>
-                  <Play className="h-5 w-5 mx-auto text-slate-400 mt-1" />
+                {contentType === 'shorts' && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"
+                  />
+                )}
+              </button>
+
+              {/* Playlists Tab */}
+              <button
+                onClick={() => setContentType('playlist')}
+                className={`flex-1 text-center pb-4 relative transition-all ${contentType === 'playlist' ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
+              >
+                <p className={`text-xs font-bold uppercase mb-2 ${contentType === 'playlist' ? 'text-red-600' : 'text-slate-500'}`}>Playlists</p>
+                <div className={`flex justify-center ${contentType === 'playlist' ? 'text-red-600' : 'text-slate-400'}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6">
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                {contentType === 'playlist' && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"
+                  />
+                )}
+              </button>
+            </div>
+          </div>
 
           {/* Top Metrics Cards - DM Cockpit Style (Red Theme) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -419,6 +476,22 @@ const YouTubePage = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Subscribers */}
+            <Card className="bg-red-600 text-white">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-red-100 font-medium uppercase">Subscribers</p>
+                    <p className="text-3xl font-bold mt-1">{formatNumber(overview.subscribersGained)}</p>
+                    <p className="text-xs text-red-200 mt-1 flex items-center gap-1">
+                      <Users className="h-3 w-3" /> New
+                    </p>
+                  </div>
+                  <Users className="h-8 w-8 text-red-200" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Insights Chart - DM Cockpit Style */}
@@ -431,27 +504,27 @@ const YouTubePage = () => {
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={dailyData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis 
-                      dataKey="date" 
+                    <XAxis
+                      dataKey="date"
                       tickFormatter={formatDate}
                       tick={{ fontSize: 11, fill: '#64748b' }}
                       axisLine={{ stroke: '#e2e8f0' }}
                     />
-                    <YAxis 
+                    <YAxis
                       tick={{ fontSize: 11, fill: '#64748b' }}
                       axisLine={{ stroke: '#e2e8f0' }}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'white', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'white',
                         border: '1px solid #e2e8f0',
                         borderRadius: '8px',
                         fontSize: '12px'
                       }}
                       labelFormatter={formatDate}
                     />
-                    <Legend 
-                      verticalAlign="top" 
+                    <Legend
+                      verticalAlign="top"
                       align="right"
                       iconType="circle"
                       wrapperStyle={{ fontSize: '12px', paddingBottom: '10px' }}
@@ -496,7 +569,7 @@ const YouTubePage = () => {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip 
+                        <Tooltip
                           contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
                           formatter={(value: any) => [formatNumber(value), 'Views']}
                         />
@@ -526,55 +599,78 @@ const YouTubePage = () => {
               </CardContent>
             </Card>
 
-            {/* Top Videos */}
+            {/* Top Content (Videos/Shorts/Playlists) */}
             <Card className="bg-white border border-slate-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg text-slate-900">Top Videos</CardTitle>
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-lg text-slate-900 capitalize">Top {contentType}</CardTitle>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setContentType('video')}
+                    className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${contentType === 'video' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  >
+                    Videos
+                  </button>
+                  <button
+                    onClick={() => setContentType('shorts')}
+                    className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${contentType === 'shorts' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  >
+                    Shorts
+                  </button>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
-                {topVideos.length > 0 ? (
+                {topContent.length > 0 ? (
                   <div className="divide-y divide-slate-100">
-                    {topVideos.slice(0, 5).map((video) => (
-                      <div key={video.videoId} className="flex items-center gap-3 p-3 hover:bg-slate-50 transition-colors">
+                    {topContent.map((item) => (
+                      <div key={item.id} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
                         {/* Thumbnail */}
-                        <div className="flex-shrink-0 w-20 h-12 bg-slate-100 rounded-lg overflow-hidden">
-                          {video.thumbnailUrl ? (
-                            <img 
-                              src={video.thumbnailUrl} 
-                              alt="" 
-                              className="w-full h-full object-cover"
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Play className="h-4 w-4 text-slate-400" />
-                            </div>
-                          )}
+                        <div className="flex-shrink-0 w-32 h-20 bg-slate-100 rounded-lg overflow-hidden relative group">
+                          <img
+                            src={item.thumbnail}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/128x80?text=No+Image'; }}
+                          />
+                          <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] px-1 rounded">
+                            {item.duration.minutes ? `${item.duration.minutes}:${String(item.duration.seconds).padStart(2, '0')}` : `0:${String(item.duration.seconds).padStart(2, '0')}`}
+                          </div>
+                          {/* Play Overlay */}
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                            <Play className="h-8 w-8 text-white fill-current" />
+                          </div>
                         </div>
-                        {/* Title */}
+
+                        {/* Details */}
                         <div className="flex-1 min-w-0">
-                          <a 
-                            href={`https://youtube.com/watch?v=${video.videoId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm font-medium text-slate-900 hover:text-red-600 line-clamp-2"
-                          >
-                            {video.title}
-                          </a>
+                          <h4 className="text-sm font-medium text-slate-900 line-clamp-2 mb-1" title={item.title}>
+                            {item.title}
+                          </h4>
+                          <div className="flex items-center gap-4 text-xs text-slate-500">
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" /> {formatNumber(item.views)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <ThumbsUp className="h-3 w-3" /> {formatNumber(item.likes)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" /> {formatNumber(item.comments)}
+                            </span>
+                            <span>{formatDate(item.published_at)}</span>
+                          </div>
                         </div>
-                        {/* Stats */}
-                        <div className="text-right text-sm">
-                          <p className="font-semibold text-slate-900">{formatNumber(video.views)}</p>
-                          <p className="text-xs text-slate-500">
-                            {video.publishedAt ? formatFullDate(video.publishedAt) : '-'}
-                          </p>
+
+                        {/* Stats Column */}
+                        <div className="text-right hidden sm:block">
+                          <p className="text-sm font-bold text-slate-900">{formatNumber(item.views)}</p>
+                          <p className="text-xs text-slate-500">Views</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="px-4 py-8 text-center text-slate-400">
-                    No videos found
+                  <div className="h-48 flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <Play className="h-8 w-8 opacity-20" />
+                    <p>No {contentType} found for this period</p>
                   </div>
                 )}
               </CardContent>

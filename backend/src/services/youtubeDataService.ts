@@ -9,6 +9,7 @@ export interface YouTubeOverviewMetrics {
   shares: number;
   subscribersGained: number;
   subscribersLost: number;
+  currentSubscribers: number;
   estimatedMinutesWatched: number;
   averageViewDuration: number;
   averageViewPercentage: number;
@@ -114,6 +115,20 @@ class YouTubeDataService implements IYouTubeDataService {
 
       youtubeOauth2Client.setCredentials({ access_token: accessToken });
       const youtubeAnalytics = google.youtubeAnalytics('v2');
+      const youtube = google.youtube('v3');
+
+      // Fetch current subscriber count from YouTube Data API
+      let currentSubscribers = 0;
+      try {
+        const channelResponse = await youtube.channels.list({
+          auth: youtubeOauth2Client,
+          part: ['statistics'],
+          id: [channelId],
+        });
+        currentSubscribers = Number(channelResponse.data.items?.[0]?.statistics?.subscriberCount) || 0;
+      } catch (err) {
+        console.warn('[YouTube Data Service] Could not fetch current subscriber count', err);
+      }
 
       const response = await youtubeAnalytics.reports.query({
         auth: youtubeOauth2Client,
@@ -125,7 +140,7 @@ class YouTubeDataService implements IYouTubeDataService {
       });
 
       const rows = response.data.rows || [];
-      
+
       if (rows.length === 0) {
         return {
           views: 0,
@@ -134,6 +149,7 @@ class YouTubeDataService implements IYouTubeDataService {
           shares: 0,
           subscribersGained: 0,
           subscribersLost: 0,
+          currentSubscribers,
           estimatedMinutesWatched: 0,
           averageViewDuration: 0,
           averageViewPercentage: 0,
@@ -149,6 +165,7 @@ class YouTubeDataService implements IYouTubeDataService {
         shares: row[3] || 0,
         subscribersGained: row[4] || 0,
         subscribersLost: row[5] || 0,
+        currentSubscribers,
         estimatedMinutesWatched: row[6] || 0,
         averageViewDuration: row[7] || 0,
         averageViewPercentage: row[8] || 0,
@@ -188,7 +205,7 @@ class YouTubeDataService implements IYouTubeDataService {
       // Fetch video details for each video
       for (const row of rows) {
         const videoId = String(row[0]);
-        
+
         try {
           const videoDetails = await youtube.videos.list({
             auth: youtubeOauth2Client,
@@ -243,7 +260,7 @@ class YouTubeDataService implements IYouTubeDataService {
       });
 
       const rows = response.data.rows || [];
-      
+
       return rows.map((row: any) => ({
         trafficSource: String(row[0]),
         views: Number(row[1]) || 0,
@@ -277,7 +294,7 @@ class YouTubeDataService implements IYouTubeDataService {
       });
 
       const rows = response.data.rows || [];
-      
+
       return rows.map((row: any) => ({
         deviceType: String(row[0]),
         views: Number(row[1]) || 0,
@@ -312,7 +329,7 @@ class YouTubeDataService implements IYouTubeDataService {
       });
 
       const rows = response.data.rows || [];
-      
+
       return rows.map((row: any) => ({
         country: String(row[0]),
         views: Number(row[1]) || 0,
@@ -326,5 +343,3 @@ class YouTubeDataService implements IYouTubeDataService {
 }
 
 export default new YouTubeDataService();
-
-

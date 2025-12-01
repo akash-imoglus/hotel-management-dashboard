@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Link2, 
-  Eye, 
-  MousePointer, 
-  DollarSign, 
-  Target, 
-  Percent, 
+import {
+  Link2,
+  Eye,
+  MousePointer,
+  DollarSign,
+  Target,
+  Percent,
   TrendingUp,
   Users,
   RefreshCw,
@@ -20,13 +20,13 @@ import {
   ArrowDownRight,
   Minus
 } from "lucide-react";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
   Legend,
   PieChart,
   Pie,
@@ -45,6 +45,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import ConnectMetaAds from "@/components/projects/ConnectMetaAds";
 import api from "@/lib/api";
 import { buildDateRange } from "@/lib/utils";
+import { formatCurrency as formatCurrencyUtil } from "@/lib/currency";
 import type { DateRange, Project, MetaAdsInsights } from "@/types";
 import type { DateRangePreset } from "@/constants/dateRanges";
 
@@ -100,9 +101,7 @@ const formatNumber = (num: number) => {
   return num.toLocaleString();
 };
 
-const formatCurrency = (num: number, symbol = '₹') => {
-  return `${symbol}${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
+
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
@@ -131,13 +130,18 @@ const MetaAdsPage = () => {
   const [demographics, setDemographics] = useState<DemographicBreakdown[]>([]);
   const [platforms, setPlatforms] = useState<PlatformBreakdown[]>([]);
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
-  
+
   const [loadingData, setLoadingData] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
 
   const [rangePreset, setRangePreset] = useState<DateRangePreset>("last28days");
   const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
   const [dateRange, setDateRange] = useState<DateRange>(buildDateRange("last28days"));
+
+  const formatCurrency = (num: number) => {
+    const currency = project?.metaAdsCurrency || 'INR';
+    return formatCurrencyUtil(num, currency);
+  };
 
   const fetchProject = useCallback(async () => {
     if (!projectId) return;
@@ -282,7 +286,7 @@ const MetaAdsPage = () => {
   }
 
   return (
-    <motion.section 
+    <motion.section
       className="space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -428,28 +432,28 @@ const MetaAdsPage = () => {
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis 
-                        dataKey="date" 
+                      <XAxis
+                        dataKey="date"
                         tickFormatter={formatDate}
                         tick={{ fontSize: 11, fill: '#64748b' }}
                         axisLine={{ stroke: '#e2e8f0' }}
                       />
-                      <YAxis 
+                      <YAxis
                         yAxisId="left"
                         tick={{ fontSize: 11, fill: '#64748b' }}
                         axisLine={{ stroke: '#e2e8f0' }}
                         tickFormatter={(v) => formatNumber(v)}
                       />
-                      <YAxis 
-                        yAxisId="right" 
+                      <YAxis
+                        yAxisId="right"
                         orientation="right"
                         tick={{ fontSize: 11, fill: '#64748b' }}
                         axisLine={{ stroke: '#e2e8f0' }}
                         tickFormatter={(v) => `₹${v}`}
                       />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'white',
                           border: '1px solid #e2e8f0',
                           borderRadius: '8px',
                           fontSize: '12px'
@@ -488,7 +492,7 @@ const MetaAdsPage = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                       <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={(v) => formatNumber(v)} />
                       <YAxis dataKey="age" type="category" tick={{ fontSize: 11, fill: '#64748b' }} width={50} />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
                         formatter={(value: any) => [formatNumber(value), 'Impressions']}
                       />
@@ -530,13 +534,13 @@ const MetaAdsPage = () => {
                           labelLine={false}
                         >
                           {platforms.map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={PLATFORM_COLORS[entry.platform] || '#6B7280'} 
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={PLATFORM_COLORS[entry.platform] || '#6B7280'}
                             />
                           ))}
                         </Pie>
-                        <Tooltip 
+                        <Tooltip
                           contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
                           formatter={(value: any) => [formatNumber(value), 'Impressions']}
                         />
@@ -546,8 +550,8 @@ const MetaAdsPage = () => {
                       {platforms.map((p, i) => (
                         <div key={i} className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span 
-                              className="w-3 h-3 rounded-full" 
+                            <span
+                              className="w-3 h-3 rounded-full"
                               style={{ backgroundColor: PLATFORM_COLORS[p.platform] || '#6B7280' }}
                             ></span>
                             <span className="text-sm text-slate-700">{p.platform}</span>
@@ -578,13 +582,13 @@ const MetaAdsPage = () => {
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={campaigns.slice(0, 5)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis 
-                        dataKey="name" 
-                        tick={{ fontSize: 10, fill: '#64748b' }} 
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 10, fill: '#64748b' }}
                         tickFormatter={(v) => v.length > 15 ? v.substring(0, 15) + '...' : v}
                       />
                       <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={(v) => formatNumber(v)} />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px' }}
                         formatter={(value: any) => [formatNumber(value), 'Impressions']}
                       />
@@ -643,7 +647,7 @@ const MetaAdsPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-purple-100 text-xs font-medium uppercase">Frequency</p>
-                    <p className="text-2xl font-bold mt-1">{insights.frequency.toFixed(2)}</p>
+                    <p className="text-2xl font-bold mt-1">{insights.frequency?.toFixed(2) || '0.00'}</p>
                   </div>
                   <Activity className="h-8 w-8 text-purple-200" />
                 </div>
@@ -677,13 +681,12 @@ const MetaAdsPage = () => {
                     {campaigns.length > 0 ? campaigns.map((campaign, index) => (
                       <tr key={campaign.id || index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            campaign.status === 'ACTIVE' 
-                              ? 'bg-emerald-100 text-emerald-700' 
-                              : campaign.status === 'PAUSED'
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-slate-100 text-slate-600'
-                          }`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${campaign.status === 'ACTIVE'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : campaign.status === 'PAUSED'
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-slate-100 text-slate-600'
+                            }`}>
                             {campaign.status === 'ACTIVE' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1"></span>}
                             {campaign.status === 'PAUSED' && <Minus className="w-3 h-3 mr-1" />}
                             {campaign.status || 'Unknown'}

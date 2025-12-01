@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Link2, 
-  TrendingUp, 
-  MousePointer, 
-  DollarSign, 
-  Target, 
-  Percent, 
+import {
+  Link2,
+  TrendingUp,
+  MousePointer,
+  DollarSign,
+  Target,
+  Percent,
   RefreshCw,
   Monitor,
   Smartphone,
@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import ConnectGoogleAds from "@/components/projects/ConnectGoogleAds";
 import api from "@/lib/api";
 import { buildDateRange } from "@/lib/utils";
+import { formatCurrency as formatCurrencyUtil } from "@/lib/currency";
 import type { DateRange, Project } from "@/types";
 import type { DateRangePreset } from "@/constants/dateRanges";
 
@@ -116,14 +117,7 @@ const formatNumber = (num: number) => {
   return num.toLocaleString();
 };
 
-const formatCurrency = (num: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(num);
-};
+
 
 const GoogleAdsPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -150,6 +144,11 @@ const GoogleAdsPage = () => {
   const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
   const [activeRange, setActiveRange] = useState<DateRange>(() => buildDateRange("7d"));
   const [searchQuery, setSearchQuery] = useState("");
+
+  const formatCurrency = (num: number) => {
+    const currency = project?.googleAdsCurrency || 'INR';
+    return formatCurrencyUtil(num, currency);
+  };
 
   const params = useMemo(
     () => ({
@@ -180,7 +179,7 @@ const GoogleAdsPage = () => {
 
   const fetchAdsData = useCallback(async () => {
     if (!projectId || !project?.googleAdsCustomerId) return;
-    
+
     setLoadingAds(true);
     setAdsErrors({
       overview: null,
@@ -275,7 +274,7 @@ const GoogleAdsPage = () => {
   };
 
   // Filter campaigns by search
-  const filteredCampaigns = campaigns.filter(c => 
+  const filteredCampaigns = campaigns.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -362,7 +361,7 @@ const GoogleAdsPage = () => {
   }));
 
   return (
-    <motion.section 
+    <motion.section
       className="space-y-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -573,10 +572,10 @@ const GoogleAdsPage = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip 
+                      <Tooltip
                         formatter={(value: number) => [formatNumber(value), 'Clicks']}
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
+                        contentStyle={{
+                          backgroundColor: 'white',
                           border: '1px solid #e2e8f0',
                           borderRadius: '8px',
                           boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
@@ -590,8 +589,8 @@ const GoogleAdsPage = () => {
                     const Icon = getDeviceIcon(device.device);
                     return (
                       <div key={device.device} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
+                        <div
+                          className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: COLORS[index % COLORS.length] }}
                         />
                         <Icon className="h-4 w-4 text-slate-500" />
@@ -621,7 +620,7 @@ const GoogleAdsPage = () => {
             {locations.length > 0 ? (
               <div className="space-y-2">
                 {locations.slice(0, 8).map((loc, index) => (
-                  <motion.div 
+                  <motion.div
                     key={loc.country}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -686,7 +685,7 @@ const GoogleAdsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredCampaigns.map((campaign, index) => (
-                    <motion.tr 
+                    <motion.tr
                       key={campaign.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -697,13 +696,12 @@ const GoogleAdsPage = () => {
                         <p className="font-medium text-slate-900">{campaign.name}</p>
                       </td>
                       <td className="px-4 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          campaign.status === 'ENABLED' 
-                            ? 'bg-emerald-100 text-emerald-700' 
-                            : campaign.status === 'PAUSED'
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${campaign.status === 'ENABLED'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : campaign.status === 'PAUSED'
                             ? 'bg-amber-100 text-amber-700'
                             : 'bg-slate-100 text-slate-600'
-                        }`}>
+                          }`}>
                           {campaign.status}
                         </span>
                       </td>
@@ -762,7 +760,7 @@ const GoogleAdsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredKeywords.slice(0, 20).map((kw, index) => (
-                    <motion.tr 
+                    <motion.tr
                       key={kw.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -791,13 +789,12 @@ const GoogleAdsPage = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         {kw.qualityScore && (
-                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                            kw.qualityScore >= 7 
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : kw.qualityScore >= 5
+                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${kw.qualityScore >= 7
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : kw.qualityScore >= 5
                               ? 'bg-amber-100 text-amber-700'
                               : 'bg-red-100 text-red-700'
-                          }`}>
+                            }`}>
                             {kw.qualityScore}
                           </span>
                         )}

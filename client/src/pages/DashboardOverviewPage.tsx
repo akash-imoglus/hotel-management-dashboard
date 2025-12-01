@@ -37,6 +37,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import MagicSuggestionModal from "@/components/dashboard/MagicSuggestionModal";
 import api from "@/lib/api";
+import { formatCurrency as formatCurrencyUtil } from "@/lib/currency";
 import type { Project } from "@/types";
 
 // Types for aggregated data
@@ -324,7 +325,9 @@ const DashboardOverviewPage = () => {
   };
 
   const formatCurrency = (num: number) => {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(num);
+    // Get currency from Google Ads or Meta Ads, fallback to INR
+    const currency = project?.googleAdsCurrency || project?.metaAdsCurrency || 'INR';
+    return formatCurrencyUtil(num, currency);
   };
 
   const formatDuration = (seconds: number) => {

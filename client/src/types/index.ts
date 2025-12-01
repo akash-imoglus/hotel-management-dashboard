@@ -29,10 +29,12 @@ export interface Project {
   websiteUrl: string;
   gaPropertyId?: string;
   googleAdsCustomerId?: string;
+  googleAdsCurrency?: string;  // Currency code from Google Ads account
   searchConsoleSiteUrl?: string;
   youtubeChannelId?: string;
   facebookPageId?: string;
   metaAdsAccountId?: string;
+  metaAdsCurrency?: string;  // Currency code from Meta Ads account
   googleSheetId?: string;
   googleDriveFolderId?: string;
   linkedinPageId?: string;
@@ -153,6 +155,7 @@ export interface MetaAdsInsights {
   conversions: number;
   conversionRate: number;
   costPerConversion: number;
+  frequency: number;
 }
 
 export interface InstagramBusinessAccount {

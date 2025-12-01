@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import youtubeAuthService from '../services/youtubeAuthService';
 import youtubeDataService from '../services/youtubeDataService';
+import youtubeContentService from '../services/youtubeContentService';
 import projectService from '../services/projectService';
 import asyncHandler from 'express-async-handler';
 
@@ -8,17 +9,17 @@ export const initiateAuth = asyncHandler(async (req: Request, res: Response): Pr
   try {
     const { projectId } = req.query;
     const state = projectId ? String(projectId) : undefined;
-    
+
     console.log(`[YouTube Initiate Auth] ===== BACKEND OAuth URL Generation =====`);
     console.log(`[YouTube Initiate Auth] Request received from: ${req.headers.origin || 'unknown'}`);
     console.log(`[YouTube Initiate Auth] Project ID: ${projectId}`);
     console.log(`[YouTube Initiate Auth] State: ${state}`);
-    
+
     // Generate auth URL from backend
     const authUrl = youtubeAuthService.generateAuthUrl(state);
-    
+
     console.log(`[YouTube Initiate Auth] Generated auth URL: ${authUrl.substring(0, 100)}...`);
-    
+
     res.status(200).json({
       success: true,
       authUrl,
@@ -35,18 +36,18 @@ export const initiateAuth = asyncHandler(async (req: Request, res: Response): Pr
 export const handleCallbackGet = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   try {
     const { code, state } = req.query;
-    
+
     console.log('[YouTube Callback GET] ===== OAuth Callback Received =====');
     console.log('[YouTube Callback GET] Code:', code ? `${String(code).substring(0, 20)}...` : 'MISSING');
     console.log('[YouTube Callback GET] State (projectId):', state || 'MISSING');
-    
+
     if (!code) {
       console.error('[YouTube Callback GET] Missing authorization code');
       return res.redirect(`http://localhost:5173/auth/youtube/callback?error=missing_code`);
     }
 
     const projectId = state ? String(state) : '';
-    
+
     if (!projectId) {
       console.error('[YouTube Callback GET] Missing project ID in state');
       return res.redirect(`http://localhost:5173/auth/youtube/callback?error=missing_project_id`);
@@ -55,7 +56,7 @@ export const handleCallbackGet = asyncHandler(async (req: Request, res: Response
     // Redirect to frontend with code and projectId
     const frontendCallbackUrl = `http://localhost:5173/auth/youtube/callback?code=${code}&projectId=${projectId}`;
     console.log('[YouTube Callback GET] Redirecting to frontend:', frontendCallbackUrl);
-    
+
     res.redirect(frontendCallbackUrl);
   } catch (error: any) {
     console.error('[YouTube Callback GET] Error:', error);
@@ -66,7 +67,7 @@ export const handleCallbackGet = asyncHandler(async (req: Request, res: Response
 export const handleCallback = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   try {
     const { code, projectId } = req.body;
-    
+
     console.log('[YouTube Callback POST] ===== Processing OAuth Callback =====');
     console.log('[YouTube Callback POST] Code:', code ? `${code.substring(0, 20)}...` : 'MISSING');
     console.log('[YouTube Callback POST] Project ID:', projectId || 'MISSING');
@@ -81,7 +82,7 @@ export const handleCallback = asyncHandler(async (req: Request, res: Response): 
 
     // @ts-ignore
     const userId = req.user._id.toString();
-    
+
     // Verify project belongs to user
     const project = await projectService.getProjectById(projectId, userId);
     if (!project) {
@@ -135,7 +136,7 @@ export const saveYouTubeChannel = asyncHandler(async (req: Request, res: Respons
   try {
     // @ts-ignore
     const userId = req.user._id.toString();
-    
+
     // Verify project belongs to user
     const project = await projectService.getProjectById(projectId, userId);
     if (!project) {
@@ -172,9 +173,9 @@ export const saveYouTubeChannel = asyncHandler(async (req: Request, res: Respons
     }
 
     const projectData = updatedProject.toObject ? updatedProject.toObject() : updatedProject;
-    
+
     console.log(`[YouTube Save Channel] Successfully saved channel ${channelId} for project ${projectId}`);
-    
+
     res.status(200).json({
       success: true,
       data: {
@@ -205,7 +206,7 @@ export const getYouTubeChannels = asyncHandler(async (req: Request, res: Respons
   try {
     // @ts-ignore
     const userId = req.user._id.toString();
-    
+
     // Verify project belongs to user
     const project = await projectService.getProjectById(projectId, userId);
     if (!project) {
@@ -257,7 +258,7 @@ export const getYouTubeOverview = asyncHandler(async (req: Request, res: Respons
   try {
     // @ts-ignore
     const userId = req.user._id.toString();
-    
+
     // Verify project belongs to user
     const project = await projectService.getProjectById(projectId, userId);
     if (!project) {
@@ -324,7 +325,7 @@ export const getYouTubeTopVideos = asyncHandler(async (req: Request, res: Respon
   try {
     // @ts-ignore
     const userId = req.user._id.toString();
-    
+
     // Verify project belongs to user
     const project = await projectService.getProjectById(projectId, userId);
     if (!project) {
@@ -391,7 +392,7 @@ export const getYouTubeTrafficSources = asyncHandler(async (req: Request, res: R
   try {
     // @ts-ignore
     const userId = req.user._id.toString();
-    
+
     // Verify project belongs to user
     const project = await projectService.getProjectById(projectId, userId);
     if (!project) {
@@ -458,7 +459,7 @@ export const getYouTubeDevices = asyncHandler(async (req: Request, res: Response
   try {
     // @ts-ignore
     const userId = req.user._id.toString();
-    
+
     // Verify project belongs to user
     const project = await projectService.getProjectById(projectId, userId);
     if (!project) {
@@ -525,7 +526,7 @@ export const getYouTubeGeography = asyncHandler(async (req: Request, res: Respon
   try {
     // @ts-ignore
     const userId = req.user._id.toString();
-    
+
     // Verify project belongs to user
     const project = await projectService.getProjectById(projectId, userId);
     if (!project) {
@@ -560,6 +561,68 @@ export const getYouTubeGeography = asyncHandler(async (req: Request, res: Respon
     res.status(200).json({
       success: true,
       data: geography,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * Get top content (Videos, Shorts, or Playlists) in DM Cockpit format
+ * Query param: contentType = 'video' | 'shorts' | 'playlist'
+ */
+export const getTopContent = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.params;
+  const { startDate, endDate, contentType } = req.query;
+
+  if (!projectId || !startDate || !endDate) {
+    res.status(400).json({
+      success: false,
+      error: 'Project ID, start date, and end date are required',
+    });
+    return;
+  }
+
+  if (!contentType || !['video', 'shorts', 'playlist'].includes(contentType as string)) {
+    res.status(400).json({
+      success: false,
+      error: 'Content type must be one of: video, shorts, playlist',
+    });
+    return;
+  }
+
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+
+    const project = await projectService.getProjectById(projectId, userId);
+    if (!project || !project.youtubeChannelId) {
+      res.status(404).json({
+        success: false,
+        error: 'Project or YouTube channel not found',
+      });
+      return;
+    }
+
+    const accessToken = await youtubeDataService.getAccessToken(projectId);
+
+    // Fetch top content based on type
+    const content = await youtubeContentService.getTopContent(
+      project.youtubeChannelId,
+      accessToken,
+      {
+        startDate: startDate as string,
+        endDate: endDate as string,
+      },
+      contentType as 'video' | 'shorts' | 'playlist'
+    );
+
+    res.status(200).json({
+      success: true,
+      data: content,
     });
   } catch (error: any) {
     res.status(400).json({

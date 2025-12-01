@@ -10,6 +10,7 @@ import {
   getYouTubeTrafficSources,
   getYouTubeDevices,
   getYouTubeGeography,
+  getTopContent,
 } from '../controllers/youtubeController';
 import { authenticate } from '../middleware/authMiddleware';
 
@@ -22,6 +23,7 @@ router.post('/channel', authenticate, saveYouTubeChannel);
 router.get('/channels/:projectId', authenticate, getYouTubeChannels);
 router.get('/:projectId/overview', authenticate, getYouTubeOverview);
 router.get('/:projectId/top-videos', authenticate, getYouTubeTopVideos);
+router.get('/:projectId/top-content', authenticate, getTopContent); // New DM Cockpit-style endpoint
 router.get('/:projectId/traffic-sources', authenticate, getYouTubeTrafficSources);
 router.get('/:projectId/devices', authenticate, getYouTubeDevices);
 router.get('/:projectId/geography', authenticate, getYouTubeGeography);

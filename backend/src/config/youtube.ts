@@ -23,6 +23,8 @@ export const youtubeOauth2Client = new google.auth.OAuth2(
 // https://www.googleapis.com/auth/yt-analytics.readonly: View YouTube Analytics reports
 export const YOUTUBE_SCOPES = [
   'https://www.googleapis.com/auth/youtube.readonly',
+  'https://www.googleapis.com/auth/youtube',
+  'https://www.googleapis.com/auth/youtubepartner',
   'https://www.googleapis.com/auth/yt-analytics.readonly',
   'https://www.googleapis.com/auth/yt-analytics-monetary.readonly'
 ];
@@ -36,20 +38,20 @@ export const getYouTubeAuthUrl = (state?: string): string => {
     prompt: 'consent', // Force consent screen to get refresh token
     response_type: 'code',
   };
-  
+
   if (state) {
     authUrlOptions.state = state;
   }
-  
+
   const authUrl = youtubeOauth2Client.generateAuthUrl(authUrlOptions);
-  
+
   // Verify response_type is in the URL
   if (!authUrl.includes('response_type=')) {
     console.warn('[YouTube Config] Warning: response_type not found in generated auth URL');
   }
-  
+
   console.log(`[YouTube Config] Initializing OAuth2Client with redirect URI: ${ENV.YOUTUBE_REDIRECT_URL}`);
-  
+
   return authUrl;
 };
 
