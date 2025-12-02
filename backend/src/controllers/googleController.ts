@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import gaAuthService from '../services/gaAuthService';
+import gbpAuthService from '../services/gbpAuthService';
 import projectService from '../services/projectService';
 import asyncHandler from 'express-async-handler';
 import gaDataService from '../services/gaDataService';
@@ -44,9 +45,9 @@ export const testCallbackRoute = asyncHandler(async (req: Request, res: Response
 
 // GET callback handler for OAuth redirect
 export const handleCallbackGet = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  console.log(`[GA OAuth Callback] Callback route hit!`);
-  console.log(`[GA OAuth Callback] Query params:`, req.query);
-  console.log(`[GA OAuth Callback] Full URL:`, req.url);
+  console.log(`[Google OAuth Callback] Callback route hit!`);
+  console.log(`[Google OAuth Callback] Query params:`, req.query);
+  console.log(`[Google OAuth Callback] Full URL:`, req.url);
   
   const { code, state, error } = req.query;
 
@@ -60,7 +61,44 @@ export const handleCallbackGet = asyncHandler(async (req: Request, res: Response
     return;
   }
 
-  const projectId = String(state);
+  const stateStr = String(state);
+  
+  // Check if this is a Google Business Profile callback (format: gbp:projectId)
+  if (stateStr.startsWith('gbp:')) {
+    const projectId = stateStr.substring(4); // Remove 'gbp:' prefix
+    console.log(`[Google Business Profile OAuth Callback] Detected GBP callback for project: ${projectId}`);
+    
+    try {
+      // Handle OAuth callback
+      const { accessToken, refreshToken, expiresAt } = await gbpAuthService.handleCallback(String(code));
+      console.log(`[Google Business Profile OAuth Callback] Tokens received - Access token: ${accessToken ? 'Yes' : 'No'}, Refresh token: ${refreshToken ? 'Yes' : 'No'}`);
+
+      // Save connection
+      console.log(`[Google Business Profile OAuth Callback] Saving connection to database...`);
+      const savedConnection = await gbpAuthService.saveConnection(projectId, refreshToken, accessToken, expiresAt);
+      console.log(`[Google Business Profile OAuth Callback] Connection saved successfully - ID: ${savedConnection._id}, Project ID: ${savedConnection.projectId}`);
+
+      // Verify the connection was saved
+      const verifyConnection = await gbpAuthService.getConnectionByProject(projectId);
+      if (!verifyConnection) {
+        console.error(`[Google Business Profile OAuth Callback] ERROR: Connection was not found after save!`);
+        throw new Error('Failed to verify connection was saved');
+      }
+      console.log(`[Google Business Profile OAuth Callback] Connection verified in database`);
+
+      // Redirect to frontend callback page with success
+      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/google-business-profile/callback?gbp_connected=${projectId}`);
+      return;
+    } catch (error: any) {
+      console.error(`[Google Business Profile OAuth Callback] ERROR:`, error);
+      console.error(`[Google Business Profile OAuth Callback] Error stack:`, error.stack);
+      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/google-business-profile/callback?error=${encodeURIComponent(error.message)}`);
+      return;
+    }
+  }
+
+  // Default: Google Analytics callback
+  const projectId = stateStr;
 
   try {
     console.log(`[GA OAuth Callback] Processing callback for project: ${projectId}`);

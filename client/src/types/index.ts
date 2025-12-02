@@ -38,6 +38,7 @@ export interface Project {
   googleSheetId?: string;
   googleDriveFolderId?: string;
   linkedinPageId?: string;
+  googleBusinessProfileLocationId?: string;
   instagram?: {
     igUserId?: string;
     igUsername?: string;

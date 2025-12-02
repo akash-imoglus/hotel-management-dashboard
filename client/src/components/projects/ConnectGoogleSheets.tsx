@@ -226,24 +226,36 @@ const ConnectGoogleSheets = ({ projectId, onSuccess, onClose }: ConnectGoogleShe
                     <div
                       key={sheet.spreadsheetId}
                       onClick={() => setSelectedSpreadsheetId(sheet.spreadsheetId)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                         selectedSpreadsheetId === sheet.spreadsheetId
-                          ? "border-green-500 bg-green-50"
-                          : "border-slate-200 hover:border-green-300 hover:bg-slate-50"
+                          ? "border-green-600 bg-green-600 shadow-md"
+                          : "border-slate-200 bg-white hover:border-green-400 hover:bg-green-50"
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <FileSpreadsheet className={`h-5 w-5 ${
+                        <FileSpreadsheet className={`h-5 w-5 flex-shrink-0 ${
                           selectedSpreadsheetId === sheet.spreadsheetId
-                            ? "text-green-600"
-                            : "text-slate-400"
+                            ? "text-white"
+                            : "text-green-600"
                         }`} />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-slate-900 truncate">{sheet.title}</p>
-                          <p className="text-xs text-slate-500 truncate">{sheet.spreadsheetId}</p>
+                          <p className={`font-semibold truncate ${
+                            selectedSpreadsheetId === sheet.spreadsheetId
+                              ? "text-white"
+                              : "text-slate-900"
+                          }`}>
+                            {sheet.title}
+                          </p>
+                          <p className={`text-xs truncate mt-0.5 ${
+                            selectedSpreadsheetId === sheet.spreadsheetId
+                              ? "text-green-100"
+                              : "text-slate-500"
+                          }`}>
+                            {sheet.sheetCount} sheet{sheet.sheetCount !== 1 ? 's' : ''}
+                          </p>
                         </div>
                         {selectedSpreadsheetId === sheet.spreadsheetId && (
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          <CheckCircle2 className="h-6 w-6 text-white flex-shrink-0" />
                         )}
                       </div>
                     </div>

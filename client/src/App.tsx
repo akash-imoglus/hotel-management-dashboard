@@ -15,6 +15,7 @@ import FacebookCallbackPage from "@/pages/FacebookCallbackPage";
 import MetaAdsCallbackPage from "@/pages/MetaAdsCallbackPage";
 import GoogleSheetsCallbackPage from "@/pages/GoogleSheetsCallbackPage";
 import GoogleDriveCallbackPage from "@/pages/GoogleDriveCallbackPage";
+import GoogleBusinessProfileCallbackPage from "@/pages/GoogleBusinessProfileCallbackPage";
 import LinkedInCallbackPage from "@/pages/LinkedInCallbackPage";
 import NewProjectPage from "@/pages/NewProjectPage";
 import DashboardOverviewPage from "@/pages/DashboardOverviewPage";
@@ -57,6 +58,7 @@ const App = () => (
       <Route path="/auth/meta-ads/callback" element={<MetaAdsCallbackPage />} />
       <Route path="/auth/google-sheets/callback" element={<GoogleSheetsCallbackPage />} />
       <Route path="/auth/google-drive/callback" element={<GoogleDriveCallbackPage />} />
+      <Route path="/auth/google-business-profile/callback" element={<GoogleBusinessProfileCallbackPage />} />
       <Route path="/auth/linkedin/callback" element={<LinkedInCallbackPage />} />
 
       <Route element={<ProtectedRoute />}>

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { HardDrive, Folder, FileText, Image, Video, Music, Archive, ExternalLink, Loader2 } from "lucide-react";
+import { HardDrive, Folder, FileText, Image, Video, Music, Archive, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
+import ReconnectButton from "@/components/common/ReconnectButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ConnectGoogleDrive from "@/components/projects/ConnectGoogleDrive";
@@ -151,10 +152,18 @@ const GoogleDrivePage = () => {
             <p className="text-sm text-slate-500">Connected folder data</p>
           </div>
         </div>
-        <Button variant="outline" onClick={fetchDriveStats} disabled={loadingStats}>
-          {loadingStats ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <ReconnectButton
+            service="google-drive"
+            projectId={projectId || ''}
+            onReconnectSuccess={() => window.location.reload()}
+            variant="outline"
+          />
+          <Button variant="outline" onClick={fetchDriveStats} disabled={loadingStats}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loadingStats ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {loadingStats ? (

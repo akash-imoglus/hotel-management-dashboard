@@ -225,24 +225,36 @@ const ConnectGoogleDrive = ({ projectId, onSuccess, onClose }: ConnectGoogleDriv
                     <div
                       key={folder.id}
                       onClick={() => setSelectedFolderId(folder.id)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                         selectedFolderId === folder.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"
+                          ? "border-blue-600 bg-blue-600 shadow-md"
+                          : "border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50"
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Folder className={`h-5 w-5 ${
+                        <Folder className={`h-5 w-5 flex-shrink-0 ${
                           selectedFolderId === folder.id
-                            ? "text-blue-600"
-                            : "text-slate-400"
+                            ? "text-white"
+                            : "text-blue-600"
                         }`} />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-slate-900 truncate">{folder.name}</p>
-                          <p className="text-xs text-slate-500 truncate">{folder.id}</p>
+                          <p className={`font-semibold truncate ${
+                            selectedFolderId === folder.id
+                              ? "text-white"
+                              : "text-slate-900"
+                          }`}>
+                            {folder.name}
+                          </p>
+                          <p className={`text-xs truncate mt-0.5 font-mono ${
+                            selectedFolderId === folder.id
+                              ? "text-blue-100"
+                              : "text-slate-500"
+                          }`}>
+                            {folder.id}
+                          </p>
                         </div>
                         {selectedFolderId === folder.id && (
-                          <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                          <CheckCircle2 className="h-6 w-6 text-white flex-shrink-0" />
                         )}
                       </div>
                     </div>

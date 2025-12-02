@@ -12,6 +12,7 @@ export interface IProject extends Document {
   googleSheetId?: string;
   googleDriveFolderId?: string;
   linkedinPageId?: string;
+  googleBusinessProfileLocationId?: string;
   instagram?: {
     igUserId?: string;
     igUsername?: string;
@@ -72,6 +73,10 @@ const projectSchema: Schema<IProject> = new Schema(
       trim: true,
     },
     linkedinPageId: {
+      type: String,
+      trim: true,
+    },
+    googleBusinessProfileLocationId: {
       type: String,
       trim: true,
     },

@@ -7,7 +7,7 @@ import {
   MousePointer,
   TrendingUp,
   TrendingDown,
-  DollarSign,
+  Wallet,
   Target,
   Search,
   Globe,
@@ -28,11 +28,13 @@ import {
   CheckCircle2,
   XCircle,
   Sparkles,
+  CreditCard,
 } from "lucide-react";
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
+import MetricLoader from "@/components/common/MetricLoader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import MagicSuggestionModal from "@/components/dashboard/MagicSuggestionModal";
@@ -314,9 +316,10 @@ const DashboardOverviewPage = () => {
   const hasInstagram = !!project?.instagram?.igUserId;
   const hasYouTube = !!project?.youtubeChannelId;
   const hasLinkedIn = !!project?.linkedinPageId;
+  const hasGBP = !!project?.googleBusinessProfileLocationId;
 
-  const connectedCount = [hasGA, hasAds, hasMetaAds, hasSearchConsole, hasFacebook, hasInstagram, hasYouTube, hasLinkedIn].filter(Boolean).length;
-  const totalPlatforms = 8;
+  const connectedCount = [hasGA, hasAds, hasMetaAds, hasSearchConsole, hasFacebook, hasInstagram, hasYouTube, hasLinkedIn, hasGBP].filter(Boolean).length;
+  const totalPlatforms = 9;
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
@@ -417,82 +420,138 @@ const DashboardOverviewPage = () => {
       {/* Key Metrics Row - Executive Summary */}
       <motion.div variants={itemVariants} className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {/* Website Visitors */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-5 text-white shadow-lg shadow-blue-500/25">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-xl shadow-blue-500/30">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-white/10" />
+          <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-24 w-24 rounded-full bg-white/5" />
           <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="h-5 w-5 text-blue-200" />
-              <span className="text-sm font-medium text-blue-100">Website Visitors</span>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-blue-50">Website Visitors</span>
             </div>
-            <div className="text-3xl font-bold">
-              {metrics.website ? formatNumber(metrics.website.users) : hasGA ? "..." : "—"}
-            </div>
-            {metrics.website && (
-              <p className="text-xs text-blue-200 mt-1">
-                {formatNumber(metrics.website.newUsers)} new users
-              </p>
+            {loadingMetrics && !metrics.website ? (
+              <MetricLoader className="py-4" />
+            ) : metrics.website ? (
+              <>
+                <div className="text-4xl font-bold mb-1">
+                  {formatNumber(metrics.website.users)}
+                </div>
+                <p className="text-sm text-blue-100 flex items-center gap-1">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  {formatNumber(metrics.website.newUsers)} new visitors
+                </p>
+              </>
+            ) : hasGA ? (
+              <div className="text-2xl font-semibold text-blue-100">—</div>
+            ) : (
+              <>
+                <div className="text-2xl font-semibold text-blue-100 mb-1">—</div>
+                <p className="text-xs text-blue-200">Connect Google Analytics</p>
+              </>
             )}
-            {!hasGA && <p className="text-xs text-blue-200 mt-1">Connect Google Analytics</p>}
           </div>
         </div>
 
         {/* Ad Spend */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 text-white shadow-lg shadow-emerald-500/25">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 text-white shadow-xl shadow-emerald-500/30">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-white/10" />
+          <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-24 w-24 rounded-full bg-white/5" />
           <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="h-5 w-5 text-emerald-200" />
-              <span className="text-sm font-medium text-emerald-100">Ad Spend</span>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <Wallet className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-emerald-50">Ad Spend</span>
             </div>
-            <div className="text-3xl font-bold">
-              {metrics.advertising ? formatCurrency(metrics.advertising.totalSpend) : (hasAds || hasMetaAds) ? "..." : "—"}
-            </div>
-            {metrics.advertising && (
-              <p className="text-xs text-emerald-200 mt-1">
-                {formatNumber(metrics.advertising.totalConversions)} conversions
-              </p>
+            {loadingMetrics && !metrics.advertising ? (
+              <MetricLoader className="py-4" />
+            ) : metrics.advertising ? (
+              <>
+                <div className="text-4xl font-bold mb-1">
+                  {formatCurrency(metrics.advertising.totalSpend)}
+                </div>
+                <p className="text-sm text-emerald-100 flex items-center gap-1">
+                  <Target className="h-3.5 w-3.5" />
+                  {formatNumber(metrics.advertising.totalConversions)} conversions
+                </p>
+              </>
+            ) : (hasAds || hasMetaAds) ? (
+              <div className="text-2xl font-semibold text-emerald-100">—</div>
+            ) : (
+              <>
+                <div className="text-2xl font-semibold text-emerald-100 mb-1">—</div>
+                <p className="text-xs text-emerald-200">Connect Ads platforms</p>
+              </>
             )}
-            {!hasAds && !hasMetaAds && <p className="text-xs text-emerald-200 mt-1">Connect Ads platforms</p>}
           </div>
         </div>
 
         {/* Social Followers */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 p-5 text-white shadow-lg shadow-pink-500/25">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 p-6 text-white shadow-xl shadow-pink-500/30">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-white/10" />
+          <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-24 w-24 rounded-full bg-white/5" />
           <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <Heart className="h-5 w-5 text-pink-200" />
-              <span className="text-sm font-medium text-pink-100">Social Followers</span>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <Heart className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-pink-50">Social Followers</span>
             </div>
-            <div className="text-3xl font-bold">
-              {metrics.social ? formatNumber(metrics.social.totalFollowers) : (hasFacebook || hasInstagram) ? "..." : "—"}
-            </div>
-            {metrics.social && (
-              <p className="text-xs text-pink-200 mt-1">
-                {formatNumber(metrics.social.totalEngagement)} engagements
-              </p>
+            {loadingMetrics && !metrics.social ? (
+              <MetricLoader className="py-4" />
+            ) : metrics.social ? (
+              <>
+                <div className="text-4xl font-bold mb-1">
+                  {formatNumber(metrics.social.totalFollowers)}
+                </div>
+                <p className="text-sm text-pink-100 flex items-center gap-1">
+                  <Heart className="h-3.5 w-3.5" />
+                  {formatNumber(metrics.social.totalEngagement)} engagements
+                </p>
+              </>
+            ) : (hasFacebook || hasInstagram) ? (
+              <div className="text-2xl font-semibold text-pink-100">—</div>
+            ) : (
+              <>
+                <div className="text-2xl font-semibold text-pink-100 mb-1">—</div>
+                <p className="text-xs text-pink-200">Connect social platforms</p>
+              </>
             )}
-            {!hasFacebook && !hasInstagram && <p className="text-xs text-pink-200 mt-1">Connect social platforms</p>}
           </div>
         </div>
 
         {/* Search Visibility */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 p-5 text-white shadow-lg shadow-purple-500/25">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 p-6 text-white shadow-xl shadow-purple-500/30">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-white/10" />
+          <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-24 w-24 rounded-full bg-white/5" />
           <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <Search className="h-5 w-5 text-purple-200" />
-              <span className="text-sm font-medium text-purple-100">Search Clicks</span>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <Search className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-purple-50">Search Clicks</span>
             </div>
-            <div className="text-3xl font-bold">
-              {metrics.seo ? formatNumber(metrics.seo.clicks) : hasSearchConsole ? "..." : "—"}
-            </div>
-            {metrics.seo && (
-              <p className="text-xs text-purple-200 mt-1">
-                Position #{metrics.seo.avgPosition.toFixed(1)}
-              </p>
+            {loadingMetrics && !metrics.seo ? (
+              <MetricLoader className="py-4" />
+            ) : metrics.seo ? (
+              <>
+                <div className="text-4xl font-bold mb-1">
+                  {formatNumber(metrics.seo.clicks)}
+                </div>
+                <p className="text-sm text-purple-100 flex items-center gap-1">
+                  <Award className="h-3.5 w-3.5" />
+                  Position #{metrics.seo.avgPosition.toFixed(1)}
+                </p>
+              </>
+            ) : hasSearchConsole ? (
+              <div className="text-2xl font-semibold text-purple-100">—</div>
+            ) : (
+              <>
+                <div className="text-2xl font-semibold text-purple-100 mb-1">—</div>
+                <p className="text-xs text-purple-200">Connect Search Console</p>
+              </>
             )}
-            {!hasSearchConsole && <p className="text-xs text-purple-200 mt-1">Connect Search Console</p>}
           </div>
         </div>
       </motion.div>
@@ -524,41 +583,60 @@ const DashboardOverviewPage = () => {
             </CardHeader>
             <CardContent className="p-6">
               {loadingMetrics && !metrics.website ? (
-                <div className="flex justify-center py-8">
-                  <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
+                <div className="flex flex-col items-center justify-center py-12">
+                  <MetricLoader />
+                  <p className="text-sm text-slate-500 mt-4">Loading website data...</p>
                 </div>
               ) : metrics.website ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  <div className="text-center p-4 bg-slate-50 rounded-xl">
-                    <Users className="h-5 w-5 text-blue-500 mx-auto mb-2" />
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  <motion.div 
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm"
+                  >
+                    <Users className="h-5 w-5 text-blue-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.users)}</p>
-                    <p className="text-xs text-slate-500">Total Users</p>
-                  </div>
-                  <div className="text-center p-4 bg-slate-50 rounded-xl">
-                    <Activity className="h-5 w-5 text-emerald-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-medium mt-1">Total Users</p>
+                  </motion.div>
+                  <motion.div 
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200 shadow-sm"
+                  >
+                    <Activity className="h-5 w-5 text-emerald-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.sessions)}</p>
-                    <p className="text-xs text-slate-500">Sessions</p>
-                  </div>
-                  <div className="text-center p-4 bg-slate-50 rounded-xl">
-                    <Eye className="h-5 w-5 text-purple-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-medium mt-1">Sessions</p>
+                  </motion.div>
+                  <motion.div 
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 shadow-sm"
+                  >
+                    <Eye className="h-5 w-5 text-purple-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.pageviews)}</p>
-                    <p className="text-xs text-slate-500">Pageviews</p>
-                  </div>
-                  <div className="text-center p-4 bg-slate-50 rounded-xl">
-                    <Percent className="h-5 w-5 text-amber-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-medium mt-1">Pageviews</p>
+                  </motion.div>
+                  <motion.div 
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center p-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl border border-amber-200 shadow-sm"
+                  >
+                    <Percent className="h-5 w-5 text-amber-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-slate-900">{metrics.website.bounceRate.toFixed(1)}%</p>
-                    <p className="text-xs text-slate-500">Bounce Rate</p>
-                  </div>
-                  <div className="text-center p-4 bg-slate-50 rounded-xl">
-                    <Clock className="h-5 w-5 text-pink-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-medium mt-1">Bounce Rate</p>
+                  </motion.div>
+                  <motion.div 
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl border border-pink-200 shadow-sm"
+                  >
+                    <Clock className="h-5 w-5 text-pink-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-slate-900">{formatDuration(metrics.website.avgSessionDuration)}</p>
-                    <p className="text-xs text-slate-500">Avg. Duration</p>
-                  </div>
-                  <div className="text-center p-4 bg-slate-50 rounded-xl">
-                    <Zap className="h-5 w-5 text-indigo-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-medium mt-1">Avg. Duration</p>
+                  </motion.div>
+                  <motion.div 
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200 shadow-sm"
+                  >
+                    <Zap className="h-5 w-5 text-indigo-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.newUsers)}</p>
-                    <p className="text-xs text-slate-500">New Users</p>
-                  </div>
+                    <p className="text-xs text-slate-600 font-medium mt-1">New Users</p>
+                  </motion.div>
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -600,33 +678,43 @@ const DashboardOverviewPage = () => {
           </CardHeader>
           <CardContent className="p-6">
             {loadingMetrics && !metrics.advertising ? (
-              <div className="flex justify-center py-8">
-                <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
+              <div className="flex flex-col items-center justify-center py-12">
+                <MetricLoader />
+                <p className="text-sm text-slate-500 mt-4">Loading advertising data...</p>
               </div>
             ) : metrics.advertising ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-emerald-50 rounded-xl">
-                    <p className="text-xs text-emerald-600 font-medium mb-1">Total Spend</p>
-                    <p className="text-2xl font-bold text-slate-900">{formatCurrency(metrics.advertising.totalSpend)}</p>
-                  </div>
-                  <div className="p-4 bg-blue-50 rounded-xl">
-                    <p className="text-xs text-blue-600 font-medium mb-1">Conversions</p>
-                    <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.advertising.totalConversions)}</p>
-                  </div>
+                  <motion.div whileHover={{ scale: 1.02 }} className="p-5 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Wallet className="h-4 w-4 text-emerald-600" />
+                      <p className="text-xs text-emerald-700 font-semibold">Total Spend</p>
+                    </div>
+                    <p className="text-3xl font-bold text-slate-900">{formatCurrency(metrics.advertising.totalSpend)}</p>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.02 }} className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Target className="h-4 w-4 text-blue-600" />
+                      <p className="text-xs text-blue-700 font-semibold">Conversions</p>
+                    </div>
+                    <p className="text-3xl font-bold text-slate-900">{formatNumber(metrics.advertising.totalConversions)}</p>
+                  </motion.div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-slate-900">{formatNumber(metrics.advertising.totalClicks)}</p>
-                    <p className="text-xs text-slate-500">Clicks</p>
+                    <MousePointer className="h-4 w-4 text-slate-500 mx-auto mb-1" />
+                    <p className="text-xl font-semibold text-slate-900">{formatNumber(metrics.advertising.totalClicks)}</p>
+                    <p className="text-xs text-slate-600 font-medium">Clicks</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-slate-900">{formatCurrency(metrics.advertising.avgCpc)}</p>
-                    <p className="text-xs text-slate-500">Avg. CPC</p>
+                    <CreditCard className="h-4 w-4 text-slate-500 mx-auto mb-1" />
+                    <p className="text-xl font-semibold text-slate-900">{formatCurrency(metrics.advertising.avgCpc)}</p>
+                    <p className="text-xs text-slate-600 font-medium">Avg. CPC</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-slate-900">{metrics.advertising.avgCtr.toFixed(2)}%</p>
-                    <p className="text-xs text-slate-500">CTR</p>
+                    <Percent className="h-4 w-4 text-slate-500 mx-auto mb-1" />
+                    <p className="text-xl font-semibold text-slate-900">{metrics.advertising.avgCtr.toFixed(2)}%</p>
+                    <p className="text-xs text-slate-600 font-medium">CTR</p>
                   </div>
                 </div>
               </div>
@@ -678,8 +766,9 @@ const DashboardOverviewPage = () => {
           </CardHeader>
           <CardContent className="p-6">
             {loadingMetrics && !metrics.social ? (
-              <div className="flex justify-center py-8">
-                <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
+              <div className="flex flex-col items-center justify-center py-12">
+                <MetricLoader />
+                <p className="text-sm text-slate-500 mt-4">Loading social media data...</p>
               </div>
             ) : metrics.social ? (
               <div className="space-y-4">
@@ -782,31 +871,44 @@ const DashboardOverviewPage = () => {
             </CardHeader>
             <CardContent className="p-6">
               {loadingMetrics && !metrics.seo ? (
-                <div className="flex justify-center py-8">
-                  <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
+                <div className="flex flex-col items-center justify-center py-12">
+                  <MetricLoader />
+                  <p className="text-sm text-slate-500 mt-4">Loading SEO data...</p>
                 </div>
               ) : metrics.seo ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-purple-50 rounded-xl">
-                    <MousePointer className="h-5 w-5 text-purple-500 mx-auto mb-2" />
+                  <motion.div 
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 shadow-sm"
+                  >
+                    <MousePointer className="h-5 w-5 text-purple-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.seo.clicks)}</p>
-                    <p className="text-xs text-slate-500">Total Clicks</p>
-                  </div>
-                  <div className="text-center p-4 bg-indigo-50 rounded-xl">
-                    <Eye className="h-5 w-5 text-indigo-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-medium mt-1">Total Clicks</p>
+                  </motion.div>
+                  <motion.div 
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200 shadow-sm"
+                  >
+                    <Eye className="h-5 w-5 text-indigo-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.seo.impressions)}</p>
-                    <p className="text-xs text-slate-500">Impressions</p>
-                  </div>
-                  <div className="text-center p-4 bg-violet-50 rounded-xl">
-                    <Percent className="h-5 w-5 text-violet-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-medium mt-1">Impressions</p>
+                  </motion.div>
+                  <motion.div 
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center p-4 bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl border border-violet-200 shadow-sm"
+                  >
+                    <Percent className="h-5 w-5 text-violet-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-slate-900">{(metrics.seo.ctr * 100).toFixed(1)}%</p>
-                    <p className="text-xs text-slate-500">Click Rate</p>
-                  </div>
-                  <div className="text-center p-4 bg-fuchsia-50 rounded-xl">
-                    <Award className="h-5 w-5 text-fuchsia-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-medium mt-1">Click Rate</p>
+                  </motion.div>
+                  <motion.div 
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center p-4 bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl border border-fuchsia-200 shadow-sm"
+                  >
+                    <Award className="h-5 w-5 text-fuchsia-600 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-slate-900">#{metrics.seo.avgPosition.toFixed(1)}</p>
-                    <p className="text-xs text-slate-500">Avg. Position</p>
-                  </div>
+                    <p className="text-xs text-slate-600 font-medium mt-1">Avg. Position</p>
+                  </motion.div>
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -842,6 +944,7 @@ const DashboardOverviewPage = () => {
                 { name: "Instagram", connected: hasInstagram, path: "instagram", color: "pink" },
                 { name: "YouTube", connected: hasYouTube, path: "youtube", color: "red" },
                 { name: "LinkedIn", connected: hasLinkedIn, path: "linkedin", color: "sky" },
+                { name: "Google Reviews", connected: hasGBP, path: "reviews", color: "amber" },
               ].map((platform) => (
                 <button
                   key={platform.name}

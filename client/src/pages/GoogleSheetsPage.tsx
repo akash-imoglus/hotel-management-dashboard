@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
+import ReconnectButton from "@/components/common/ReconnectButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -205,6 +206,12 @@ const GoogleSheetsPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <ReconnectButton
+            service="google-sheets"
+            projectId={projectId || ''}
+            onReconnectSuccess={() => window.location.reload()}
+            variant="outline"
+          />
           <a
             href={spreadsheetDetails?.url}
             target="_blank"

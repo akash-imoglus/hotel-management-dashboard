@@ -20,7 +20,8 @@ import {
   Link2,
   ChevronLeft,
   ChevronRight,
-  Globe
+  Globe,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +45,7 @@ import ConnectInstagram from "@/components/projects/ConnectInstagram";
 import ConnectGoogleSheets from "@/components/projects/ConnectGoogleSheets";
 import ConnectGoogleDrive from "@/components/projects/ConnectGoogleDrive";
 import ConnectLinkedIn from "@/components/projects/ConnectLinkedIn";
+import ConnectGoogleBusinessProfile from "@/components/projects/ConnectGoogleBusinessProfile";
 
 const ProjectSelector = () => {
   const { projectId } = useParams<{ projectId?: string }>();
@@ -63,6 +65,7 @@ const ProjectSelector = () => {
   const [showConnectGoogleSheetsModal, setShowConnectGoogleSheetsModal] = useState(false);
   const [showConnectGoogleDriveModal, setShowConnectGoogleDriveModal] = useState(false);
   const [showConnectLinkedInModal, setShowConnectLinkedInModal] = useState(false);
+  const [showConnectGBPModal, setShowConnectGBPModal] = useState(false);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -248,7 +251,8 @@ const ProjectSelector = () => {
               onConnectInstagram={() => setShowConnectInstagramModal(true)}
               onConnectGoogleSheets={() => setShowConnectGoogleSheetsModal(true)}
               onConnectGoogleDrive={() => setShowConnectGoogleDriveModal(true)}
-                onConnectLinkedIn={() => setShowConnectLinkedInModal(true)}
+              onConnectLinkedIn={() => setShowConnectLinkedInModal(true)}
+              onConnectGBP={() => setShowConnectGBPModal(true)}
               onConnectionSuccess={handleConnectSuccess}
             />
           )}
@@ -370,6 +374,17 @@ const ProjectSelector = () => {
           onClose={() => setShowConnectLinkedInModal(false)}
         />
       )}
+
+      {showConnectGBPModal && projectId && (
+        <ConnectGoogleBusinessProfile
+          projectId={projectId}
+          onSuccess={() => {
+            setShowConnectGBPModal(false);
+            void handleConnectSuccess();
+          }}
+          onClose={() => setShowConnectGBPModal(false)}
+        />
+      )}
     </>
   );
 };
@@ -394,6 +409,7 @@ interface ProjectInsightsSectionProps {
   onConnectGoogleSheets: () => void;
   onConnectGoogleDrive: () => void;
   onConnectLinkedIn: () => void;
+  onConnectGBP: () => void;
   onConnectionSuccess: () => void;
 }
 
@@ -410,6 +426,7 @@ const ProjectInsightsSection = ({
   onConnectGoogleSheets,
   onConnectGoogleDrive,
   onConnectLinkedIn,
+  onConnectGBP,
   onConnectionSuccess
 }: ProjectInsightsSectionProps) => {
   const connections: ConnectionStatus[] = [
@@ -423,6 +440,7 @@ const ProjectInsightsSection = ({
     { label: "Google Sheets", connected: !!project?.googleSheetId, route: `/dashboard/${projectId}/sheets`, icon: FileSpreadsheet },
     { label: "Google Drive", connected: !!project?.googleDriveFolderId, route: `/dashboard/${projectId}/drive`, icon: HardDrive },
     { label: "LinkedIn", connected: !!project?.linkedinPageId, route: `/dashboard/${projectId}/linkedin`, icon: Linkedin },
+    { label: "Google Reviews", connected: !!project?.googleBusinessProfileLocationId, route: `/dashboard/${projectId}/reviews`, icon: Star },
   ];
 
   const pendingConnections = connections.filter((conn) => !conn.connected);
@@ -488,6 +506,7 @@ const ProjectInsightsSection = ({
                 else if (conn.label === "Google Sheets") onConnectGoogleSheets();
                 else if (conn.label === "Google Drive") onConnectGoogleDrive();
                 else if (conn.label === "LinkedIn") onConnectLinkedIn();
+                else if (conn.label === "Google Reviews") onConnectGBP();
               };
               return (
                 <div
@@ -564,6 +583,7 @@ const CollapsedProjectNav = ({ projectId, project }: CollapsedProjectNavProps) =
     { label: "Google Sheets", connected: !!project?.googleSheetId, route: `/dashboard/${projectId}/sheets`, icon: FileSpreadsheet },
     { label: "Google Drive", connected: !!project?.googleDriveFolderId, route: `/dashboard/${projectId}/drive`, icon: HardDrive },
     { label: "LinkedIn", connected: !!project?.linkedinPageId, route: `/dashboard/${projectId}/linkedin`, icon: Linkedin },
+    { label: "Google Reviews", connected: !!project?.googleBusinessProfileLocationId, route: `/dashboard/${projectId}/reviews`, icon: Star },
   ];
 
   const connectedServices = connections.filter((conn) => conn.connected);

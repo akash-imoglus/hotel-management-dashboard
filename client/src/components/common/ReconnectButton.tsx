@@ -21,7 +21,7 @@ import {
 import api from "@/lib/api";
 
 interface ReconnectButtonProps {
-  service: 'google-analytics' | 'google-ads' | 'google-search-console' | 'youtube' | 'facebook' | 'instagram' | 'meta-ads' | 'linkedin';
+  service: 'google-analytics' | 'google-ads' | 'google-search-console' | 'youtube' | 'facebook' | 'instagram' | 'meta-ads' | 'linkedin' | 'google-sheets' | 'google-drive';
   projectId: string;
   onReconnectSuccess?: () => void;
   variant?: 'default' | 'outline' | 'ghost' | 'destructive' | 'secondary' | 'link';
@@ -147,6 +147,30 @@ const SERVICE_CONFIG: Record<string, {
     description: 'View company page and professional insights',
     itemLabel: 'Page'
   },
+  'google-sheets': { 
+    name: 'Google Sheets', 
+    authEndpoint: '/google-sheets/auth', 
+    itemsEndpoint: '/google-sheets/spreadsheets',
+    saveEndpoint: '/google-sheets/spreadsheet',
+    itemIdField: 'spreadsheetId',
+    gradient: 'from-green-500 to-emerald-600',
+    iconBg: 'bg-green-100',
+    icon: '📊',
+    description: 'Connect spreadsheets and data',
+    itemLabel: 'Spreadsheet'
+  },
+  'google-drive': { 
+    name: 'Google Drive', 
+    authEndpoint: '/google-drive/auth', 
+    itemsEndpoint: '/google-drive/folders',
+    saveEndpoint: '/google-drive/folder',
+    itemIdField: 'folderId',
+    gradient: 'from-blue-500 to-blue-600',
+    iconBg: 'bg-blue-100',
+    icon: '💾',
+    description: 'Access files and folders',
+    itemLabel: 'Folder'
+  },
 };
 
 type Step = 'confirm' | 'oauth' | 'select' | 'success' | 'error';
@@ -254,9 +278,9 @@ const ReconnectButton = ({
       if (data.success && data.data) {
         // Normalize items to a common format
         const normalizedItems: SelectableItem[] = data.data.map((item: any) => ({
-          id: item.id || item.propertyId || item.customerId || item.channelId || item.siteUrl || item.accountId,
-          name: item.name || item.displayName || item.title || item.siteUrl || `Account ${item.id}`,
-          category: item.category || item.type || '',
+          id: item.id || item.spreadsheetId || item.folderId || item.propertyId || item.customerId || item.channelId || item.siteUrl || item.accountId || item.account_id,
+          name: item.name || item.title || item.displayName || item.siteUrl || `Account ${item.id || item.spreadsheetId || item.folderId}`,
+          category: item.category || item.type || (item.sheetCount ? `${item.sheetCount} sheet${item.sheetCount !== 1 ? 's' : ''}` : ''),
           access_token: item.access_token,
           customUrl: item.customUrl,
           subscriberCount: item.subscriberCount,
@@ -471,27 +495,38 @@ const ReconnectButton = ({
                   )}
 
                   {filteredItems.length > 0 ? (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {filteredItems.map((item) => (
+                    <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-2">
+                      {filteredItems.map((item) => {
+                        const isSelected = String(selectedItemId) === String(item.id);
+                        console.log('[ReconnectButton] Item:', item.id, 'Selected:', selectedItemId, 'Match:', isSelected);
+                        return (
                         <button
                           key={item.id}
-                          onClick={() => setSelectedItemId(item.id)}
-                          className={`w-full text-left rounded-xl border p-4 transition-all ${
-                            selectedItemId === item.id
-                              ? `border-2 border-transparent bg-gradient-to-r ${config.gradient} text-white shadow-lg`
-                              : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          onClick={() => {
+                            console.log('[ReconnectButton] Clicked item:', item.id, item.name);
+                            setSelectedItemId(item.id);
+                          }}
+                          className={`w-full text-left rounded-lg border-2 p-4 transition-all ${
+                            isSelected
+                              ? `border-green-600 bg-green-600 text-white shadow-md`
+                              : 'border-slate-200 bg-white hover:border-green-400 hover:bg-green-50'
                           }`}
                         >
-                          <div className="font-medium">
-                            {item.name}
+                          <div className={`font-semibold ${
+                            isSelected ? 'text-white' : 'text-slate-900'
+                          }`}>
+                            {item.name || '(Unnamed)'}
                           </div>
-                          <div className={`text-xs mt-1 ${selectedItemId === item.id ? 'text-white/80' : 'text-slate-500'}`}>
+                          <div className={`text-xs mt-1 ${
+                            isSelected ? 'text-white/90' : 'text-slate-500'
+                          }`}>
                             ID: {item.id}
                             {item.category && ` • ${item.category}`}
                             {item.subscriberCount && ` • ${item.subscriberCount} subscribers`}
                           </div>
                         </button>
-                      ))}
+                      );
+                      })}
                     </div>
                   ) : (
                     <div className="py-8 text-center text-slate-500">
@@ -515,21 +550,26 @@ const ReconnectButton = ({
                     </div>
                   )}
 
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-3 pt-4 border-t mt-4">
                     <Button variant="outline" onClick={() => setStep('confirm')} className="flex-1">
                       Back
                     </Button>
                     <Button 
                       onClick={handleSaveSelection}
                       disabled={!selectedItemId || loading}
-                      className={`flex-1 bg-gradient-to-r ${config.gradient} border-0`}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Saving...
+                        </>
                       ) : (
-                        <CheckCircle className="h-4 w-4 mr-2" />
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Save Selection
+                        </>
                       )}
-                      Save Selection
                     </Button>
                   </div>
                 </motion.div>

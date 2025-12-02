@@ -11,6 +11,7 @@ import googleAdsRoutes from './routes/googleAdsRoutes';
 import googleSearchConsoleRoutes from './routes/googleSearchConsoleRoutes';
 import googleSheetsRoutes from './routes/googleSheetsRoutes';
 import googleDriveRoutes from './routes/googleDriveRoutes';
+import googleBusinessProfileRoutes from './routes/googleBusinessProfileRoutes';
 import youtubeRoutes from './routes/youtubeRoutes';
 import facebookRoutes from './routes/facebookRoutes';
 import metaAdsRoutes from './routes/metaAdsRoutes';
@@ -42,6 +43,7 @@ app.use('/api/gsc', googleSearchConsoleRoutes); // Short route for Google Search
 app.use('/api/google-search-console', googleSearchConsoleRoutes); // Keep for backward compatibility
 app.use('/api/google-sheets', googleSheetsRoutes);
 app.use('/api/google-drive', googleDriveRoutes);
+app.use('/api/google-business-profile', googleBusinessProfileRoutes);
 app.use('/api/youtube', youtubeRoutes);
 app.use('/api/facebook', facebookRoutes);
 app.use('/api/meta-ads', metaAdsRoutes);
