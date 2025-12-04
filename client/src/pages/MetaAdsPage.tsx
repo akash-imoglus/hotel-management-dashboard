@@ -16,8 +16,6 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Activity,
-  ArrowUpRight,
-  ArrowDownRight,
   Minus
 } from "lucide-react";
 import {
@@ -27,12 +25,9 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Legend,
   PieChart,
   Pie,
   Cell,
-  AreaChart,
-  Area,
   CartesianGrid
 } from "recharts";
 import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
@@ -115,7 +110,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   'Messenger': '#00B2FF',
 };
 
-const AGE_COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#EC4899'];
+
 
 const MetaAdsPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -224,16 +219,7 @@ const MetaAdsPage = () => {
     return ageOrder.indexOf(a.age) - ageOrder.indexOf(b.age);
   });
 
-  const genderData = demographics.reduce((acc: any[], item) => {
-    const existing = acc.find(g => g.gender === item.gender);
-    if (existing) {
-      existing.impressions += item.impressions;
-      existing.spend += item.spend;
-    } else {
-      acc.push({ gender: item.gender === 'male' ? 'Male' : item.gender === 'female' ? 'Female' : 'Unknown', impressions: item.impressions, spend: item.spend });
-    }
-    return acc;
-  }, []);
+
 
   if (loadingProject) {
     return <LoadingState message="Loading project..." className="py-16" />;
@@ -524,13 +510,13 @@ const MetaAdsPage = () => {
                     <ResponsiveContainer width="50%" height={200}>
                       <PieChart>
                         <Pie
-                          data={platforms}
+                          data={platforms as any}
                           dataKey="impressions"
                           nameKey="platform"
                           cx="50%"
                           cy="50%"
                           outerRadius={70}
-                          label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                          label={({ percent }: { percent?: number }) => `${((percent || 0) * 100).toFixed(0)}%`}
                           labelLine={false}
                         >
                           {platforms.map((entry, index) => (

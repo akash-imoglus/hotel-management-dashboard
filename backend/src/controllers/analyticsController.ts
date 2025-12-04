@@ -541,3 +541,59 @@ export const getTimeBasedAnalytics = asyncHandler(async (req: Request, res: Resp
     });
   }
 });
+
+export const getSessionSourceMedium = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.query as { startDate: string; endDate: string };
+
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+    const project = await validateAnalyticsRequest(projectId, userId, startDate, endDate);
+
+    const data = await analyticsService.getSessionSourceMedium(
+      projectId,
+      project.gaPropertyId!,
+      startDate,
+      endDate
+    );
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+export const getGoogleAdsCampaigns = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.query as { startDate: string; endDate: string };
+
+  try {
+    // @ts-ignore
+    const userId = req.user._id.toString();
+    const project = await validateAnalyticsRequest(projectId, userId, startDate, endDate);
+
+    const data = await analyticsService.getGoogleAdsCampaigns(
+      projectId,
+      project.gaPropertyId!,
+      startDate,
+      endDate
+    );
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});

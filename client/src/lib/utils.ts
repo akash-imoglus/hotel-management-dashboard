@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, subDays, subWeeks, subMonths } from "date-fns";
+import { subDays } from "date-fns";
 import { toZonedTime, formatInTimeZone } from "date-fns-tz";
 import type { DateRange } from "@/types";
 import type { DateRangePreset } from "@/constants/dateRanges";
@@ -37,7 +37,7 @@ export function formatIndianDate(date: Date, formatStr: string = "yyyy-MM-dd"): 
 export function buildDateRange(
   preset: DateRangePreset | "last28days" | "last7days" | "last30days",
   customRange?: { startDate?: string; endDate?: string },
-  options?: { 
+  options?: {
     useYesterdayAsEnd?: boolean; // Use yesterday to avoid incomplete data
     timezone?: string;
   }
@@ -45,11 +45,11 @@ export function buildDateRange(
   // Get current date in Indian timezone
   const now = new Date();
   const todayInIST = toZonedTime(now, IST_TIMEZONE);
-  
+
   // For more accurate data, use yesterday as end date since today's data may be incomplete
   // Google Analytics typically has 24-48 hour data processing delay
   const useYesterdayAsEnd = options?.useYesterdayAsEnd ?? false;
-  
+
   let endDate: Date = useYesterdayAsEnd ? subDays(todayInIST, 1) : todayInIST;
   let startDate: Date;
 
@@ -99,4 +99,3 @@ export function buildAccurateDateRange(
 ): DateRange {
   return buildDateRange(preset, customRange, { useYesterdayAsEnd: true });
 }
-

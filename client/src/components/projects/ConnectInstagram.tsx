@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import LoadingState from "@/components/common/LoadingState";
-import ErrorState from "@/components/common/ErrorState";
 import api from "@/lib/api";
 import type { InstagramBusinessAccount } from "@/types";
 
@@ -70,7 +69,7 @@ const ConnectInstagram = ({ projectId, onSuccess, onClose }: ConnectInstagramPro
         const height = 700;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
-        
+
         const popup = window.open(
           data.data.authUrl,
           "Instagram Authorization",
@@ -79,7 +78,7 @@ const ConnectInstagram = ({ projectId, onSuccess, onClose }: ConnectInstagramPro
 
         const messageListener = (event: MessageEvent) => {
           if (event.origin !== window.location.origin) return;
-          
+
           if (event.data.type === "FACEBOOK_OAUTH_SUCCESS" && event.data.projectId === projectId) {
             window.removeEventListener("message", messageListener);
             handleCheckConnection();
@@ -147,7 +146,7 @@ const ConnectInstagram = ({ projectId, onSuccess, onClose }: ConnectInstagramPro
         igUsername: selectedAccount.igUsername,
         pageId: selectedAccount.pageId,
       });
-      
+
       if (response.data.success) {
         setStep("success");
         setTimeout(() => {
@@ -268,7 +267,7 @@ const ConnectInstagram = ({ projectId, onSuccess, onClose }: ConnectInstagramPro
                       className="pl-10"
                     />
                   </div>
-                  
+
                   {filteredAccounts.length === 0 ? (
                     <div className="text-center py-8 text-slate-500">
                       <p>No accounts found matching "{searchQuery}"</p>
@@ -287,11 +286,10 @@ const ConnectInstagram = ({ projectId, onSuccess, onClose }: ConnectInstagramPro
                         <button
                           key={account.igUserId}
                           onClick={() => setSelectedAccount(account)}
-                          className={`w-full text-left rounded-lg border p-4 transition-colors ${
-                            selectedAccount?.igUserId === account.igUserId
+                          className={`w-full text-left rounded-lg border p-4 transition-colors ${selectedAccount?.igUserId === account.igUserId
                               ? "border-hotel-ocean bg-hotel-foam"
                               : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                          }`}
+                            }`}
                         >
                           <div className="font-semibold text-slate-900">@{account.igUsername}</div>
                           <div className="text-xs text-slate-500 mt-1">
@@ -301,7 +299,7 @@ const ConnectInstagram = ({ projectId, onSuccess, onClose }: ConnectInstagramPro
                       ))}
                     </div>
                   )}
-                  
+
                   {searchQuery && filteredAccounts.length > 0 && (
                     <p className="text-xs text-slate-500">
                       Showing {filteredAccounts.length} of {accounts.length} accounts

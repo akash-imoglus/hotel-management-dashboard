@@ -6,16 +6,12 @@ import {
   Eye,
   MousePointer,
   TrendingUp,
-  TrendingDown,
   Wallet,
   Target,
   Search,
   Globe,
   Heart,
-  MessageCircle,
-  Share2,
   BarChart3,
-  ArrowRight,
   ExternalLink,
   Zap,
   Award,
@@ -24,13 +20,12 @@ import {
   Percent,
   ChevronRight,
   RefreshCw,
-  AlertCircle,
   CheckCircle2,
   XCircle,
   Sparkles,
   CreditCard,
 } from "lucide-react";
-import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import EmptyState from "@/components/common/EmptyState";
@@ -589,7 +584,7 @@ const DashboardOverviewPage = () => {
                 </div>
               ) : metrics.website ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -4 }}
                     className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-sm"
                   >
@@ -597,7 +592,7 @@ const DashboardOverviewPage = () => {
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.users)}</p>
                     <p className="text-xs text-slate-600 font-medium mt-1">Total Users</p>
                   </motion.div>
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -4 }}
                     className="text-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200 shadow-sm"
                   >
@@ -605,7 +600,7 @@ const DashboardOverviewPage = () => {
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.sessions)}</p>
                     <p className="text-xs text-slate-600 font-medium mt-1">Sessions</p>
                   </motion.div>
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -4 }}
                     className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 shadow-sm"
                   >
@@ -613,7 +608,7 @@ const DashboardOverviewPage = () => {
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.website.pageviews)}</p>
                     <p className="text-xs text-slate-600 font-medium mt-1">Pageviews</p>
                   </motion.div>
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -4 }}
                     className="text-center p-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl border border-amber-200 shadow-sm"
                   >
@@ -621,7 +616,7 @@ const DashboardOverviewPage = () => {
                     <p className="text-2xl font-bold text-slate-900">{metrics.website.bounceRate.toFixed(1)}%</p>
                     <p className="text-xs text-slate-600 font-medium mt-1">Bounce Rate</p>
                   </motion.div>
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -4 }}
                     className="text-center p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl border border-pink-200 shadow-sm"
                   >
@@ -629,7 +624,7 @@ const DashboardOverviewPage = () => {
                     <p className="text-2xl font-bold text-slate-900">{formatDuration(metrics.website.avgSessionDuration)}</p>
                     <p className="text-xs text-slate-600 font-medium mt-1">Avg. Duration</p>
                   </motion.div>
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -4 }}
                     className="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200 shadow-sm"
                   >
@@ -877,7 +872,7 @@ const DashboardOverviewPage = () => {
                 </div>
               ) : metrics.seo ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -4 }}
                     className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 shadow-sm"
                   >
@@ -885,7 +880,7 @@ const DashboardOverviewPage = () => {
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.seo.clicks)}</p>
                     <p className="text-xs text-slate-600 font-medium mt-1">Total Clicks</p>
                   </motion.div>
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -4 }}
                     className="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200 shadow-sm"
                   >
@@ -893,7 +888,7 @@ const DashboardOverviewPage = () => {
                     <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.seo.impressions)}</p>
                     <p className="text-xs text-slate-600 font-medium mt-1">Impressions</p>
                   </motion.div>
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -4 }}
                     className="text-center p-4 bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl border border-violet-200 shadow-sm"
                   >
@@ -901,7 +896,7 @@ const DashboardOverviewPage = () => {
                     <p className="text-2xl font-bold text-slate-900">{(metrics.seo.ctr * 100).toFixed(1)}%</p>
                     <p className="text-xs text-slate-600 font-medium mt-1">Click Rate</p>
                   </motion.div>
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.05, y: -4 }}
                     className="text-center p-4 bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl border border-fuchsia-200 shadow-sm"
                   >

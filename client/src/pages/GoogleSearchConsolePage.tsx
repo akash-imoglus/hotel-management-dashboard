@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Link2, 
-  Search, 
-  Globe, 
-  FileText, 
-  Smartphone, 
-  Monitor, 
+import {
+  Link2,
+  Search,
+  Globe,
+  FileText,
+  Smartphone,
+  Monitor,
   Tablet,
   TrendingUp,
   MousePointer,
@@ -20,7 +20,6 @@ import ReactCountryFlag from "react-country-flag";
 import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
-import EmptyState from "@/components/common/EmptyState";
 import ReconnectButton from "@/components/common/ReconnectButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,13 +82,7 @@ const GoogleSearchConsolePage = () => {
   const [countries, setCountries] = useState<SearchConsoleCountry[]>([]);
   const [devices, setDevices] = useState<SearchConsoleDevice[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [dataErrors, setDataErrors] = useState<Record<string, string | null>>({
-    overview: null,
-    queries: null,
-    pages: null,
-    countries: null,
-    devices: null,
-  });
+
 
   const [rangePreset, setRangePreset] = useState<DateRangePreset>("last28days");
   const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
@@ -136,13 +129,7 @@ const GoogleSearchConsolePage = () => {
     };
 
     setLoadingData(true);
-    setDataErrors({
-      overview: null,
-      queries: null,
-      pages: null,
-      countries: null,
-      devices: null,
-    });
+
 
     try {
       const { data } = await api.get<{ success: boolean; data: SearchConsoleOverview }>(
@@ -151,7 +138,7 @@ const GoogleSearchConsolePage = () => {
       );
       if (data.success) setOverview(data.data);
     } catch (err: any) {
-      setDataErrors((prev) => ({ ...prev, overview: err.response?.data?.error || "Failed to load overview" }));
+      console.error(err);
     }
 
     try {
@@ -161,7 +148,7 @@ const GoogleSearchConsolePage = () => {
       );
       if (data.success) setQueries(data.data);
     } catch (err: any) {
-      setDataErrors((prev) => ({ ...prev, queries: err.response?.data?.error || "Failed to load queries" }));
+      console.error(err);
     }
 
     try {
@@ -171,7 +158,7 @@ const GoogleSearchConsolePage = () => {
       );
       if (data.success) setPages(data.data);
     } catch (err: any) {
-      setDataErrors((prev) => ({ ...prev, pages: err.response?.data?.error || "Failed to load pages" }));
+      console.error(err);
     }
 
     try {
@@ -181,7 +168,7 @@ const GoogleSearchConsolePage = () => {
       );
       if (data.success) setCountries(data.data);
     } catch (err: any) {
-      setDataErrors((prev) => ({ ...prev, countries: err.response?.data?.error || "Failed to load countries" }));
+      console.error(err);
     }
 
     try {
@@ -191,7 +178,7 @@ const GoogleSearchConsolePage = () => {
       );
       if (data.success) setDevices(data.data);
     } catch (err: any) {
-      setDataErrors((prev) => ({ ...prev, devices: err.response?.data?.error || "Failed to load devices" }));
+      console.error(err);
     }
 
     setLoadingData(false);
@@ -270,7 +257,7 @@ const GoogleSearchConsolePage = () => {
   }));
 
   return (
-    <motion.section 
+    <motion.section
       className="space-y-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -414,10 +401,10 @@ const GoogleSearchConsolePage = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip 
+                      <Tooltip
                         formatter={(value: number) => [formatNumber(value), 'Clicks']}
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
+                        contentStyle={{
+                          backgroundColor: 'white',
                           border: '1px solid #e2e8f0',
                           borderRadius: '8px',
                           boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
@@ -431,8 +418,8 @@ const GoogleSearchConsolePage = () => {
                     const Icon = getDeviceIcon(device.device);
                     return (
                       <div key={device.device} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
+                        <div
+                          className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: COLORS[index % COLORS.length] }}
                         />
                         <Icon className="h-4 w-4 text-slate-500" />
@@ -462,7 +449,7 @@ const GoogleSearchConsolePage = () => {
             {countries.length > 0 ? (
               <div className="space-y-2">
                 {countries.slice(0, 8).map((country, index) => (
-                  <motion.div 
+                  <motion.div
                     key={country.country}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -526,7 +513,7 @@ const GoogleSearchConsolePage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredQueries.slice(0, 25).map((query, index) => (
-                    <motion.tr 
+                    <motion.tr
                       key={index}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -546,15 +533,14 @@ const GoogleSearchConsolePage = () => {
                         {safeToFixed(query.ctr, 2)}%
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded-full text-sm font-bold ${
-                          (Number(query.position) || 0) <= 3 
+                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded-full text-sm font-bold ${(Number(query.position) || 0) <= 3
                             ? 'bg-emerald-100 text-emerald-700'
                             : (Number(query.position) || 0) <= 10
-                            ? 'bg-cyan-100 text-cyan-700'
-                            : (Number(query.position) || 0) <= 20
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-slate-100 text-slate-600'
-                        }`}>
+                              ? 'bg-cyan-100 text-cyan-700'
+                              : (Number(query.position) || 0) <= 20
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-slate-100 text-slate-600'
+                          }`}>
                           {safeToFixed(query.position, 1)}
                         </span>
                       </td>
@@ -608,7 +594,7 @@ const GoogleSearchConsolePage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredPages.slice(0, 25).map((page, index) => (
-                    <motion.tr 
+                    <motion.tr
                       key={index}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -630,15 +616,14 @@ const GoogleSearchConsolePage = () => {
                         {safeToFixed(page.ctr, 2)}%
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded-full text-sm font-bold ${
-                          (Number(page.position) || 0) <= 3 
+                        <span className={`inline-flex items-center justify-center w-10 h-7 rounded-full text-sm font-bold ${(Number(page.position) || 0) <= 3
                             ? 'bg-emerald-100 text-emerald-700'
                             : (Number(page.position) || 0) <= 10
-                            ? 'bg-cyan-100 text-cyan-700'
-                            : (Number(page.position) || 0) <= 20
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-slate-100 text-slate-600'
-                        }`}>
+                              ? 'bg-cyan-100 text-cyan-700'
+                              : (Number(page.position) || 0) <= 20
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-slate-100 text-slate-600'
+                          }`}>
                           {safeToFixed(page.position, 1)}
                         </span>
                       </td>

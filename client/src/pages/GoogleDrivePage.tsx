@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { HardDrive, Folder, FileText, Image, Video, Music, Archive, ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import { HardDrive, Folder, FileText, Image, Video, Music, Archive, ExternalLink, RefreshCw } from "lucide-react";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
 import ReconnectButton from "@/components/common/ReconnectButton";

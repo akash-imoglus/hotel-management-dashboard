@@ -12,21 +12,20 @@ const GoogleCallbackPage = () => {
     const handleCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
-      const userParam = urlParams.get('user');
-      
+
       if (token) {
         try {
           // Store token properly using the auth utility
           persistToken(token, true);
-          
+
           // If user data is provided, we can use it, but let AuthContext fetch to ensure consistency
           // Refresh the user data from the server
           await refreshUser();
-          
+
           // Clean up URL parameters
           const cleanUrl = window.location.pathname;
           window.history.replaceState({}, '', cleanUrl);
-          
+
           // Navigate to dashboard
           navigate('/dashboard', { replace: true });
         } catch (error) {
@@ -50,13 +49,3 @@ const GoogleCallbackPage = () => {
 };
 
 export default GoogleCallbackPage;
-
-
-
-
-
-
-
-
-
-

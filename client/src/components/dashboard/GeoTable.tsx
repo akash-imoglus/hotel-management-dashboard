@@ -34,7 +34,7 @@ const GeoTable = ({ data }: GeoTableProps) => (
                 )}
                 {geo.country}
               </td>
-              <td className="py-3 px-2 text-slate-700 text-right">{geo.users.toLocaleString()}</td>
+              <td className="py-3 px-2 text-slate-700 text-right">{geo.users?.toLocaleString() || 0}</td>
               <td className="py-3 px-2 text-slate-700 text-right">{geo.sessions.toLocaleString()}</td>
             </tr>
           ))}

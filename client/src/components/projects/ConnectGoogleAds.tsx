@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import LoadingState from "@/components/common/LoadingState";
-import ErrorState from "@/components/common/ErrorState";
 import api from "@/lib/api";
 import type { GoogleAdsCustomer } from "@/types";
 
@@ -22,7 +21,6 @@ const ConnectGoogleAds = ({ projectId, onSuccess, onClose }: ConnectGoogleAdsPro
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authUrl, setAuthUrl] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Filter customers based on search query (by name or customer ID)
@@ -70,14 +68,13 @@ const ConnectGoogleAds = ({ projectId, onSuccess, onClose }: ConnectGoogleAdsPro
         `/google-ads/auth?projectId=${projectId}`
       );
       if (data.success && data.data.authUrl) {
-        setAuthUrl(data.data.authUrl);
         setStep("oauth");
         // Open OAuth window
         const width = 600;
         const height = 700;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
-        
+
         const popup = window.open(
           data.data.authUrl,
           "Google Ads Authorization",
@@ -87,7 +84,7 @@ const ConnectGoogleAds = ({ projectId, onSuccess, onClose }: ConnectGoogleAdsPro
         // Listen for message from popup
         const messageListener = (event: MessageEvent) => {
           if (event.origin !== window.location.origin) return;
-          
+
           if (event.data.type === "GOOGLE_ADS_OAUTH_SUCCESS" && event.data.projectId === projectId) {
             window.removeEventListener("message", messageListener);
             handleCheckConnection();
@@ -158,7 +155,7 @@ const ConnectGoogleAds = ({ projectId, onSuccess, onClose }: ConnectGoogleAdsPro
   const handleSaveCustomer = async () => {
     // Allow manual customer ID entry if no customers were fetched
     const customerIdToSave = selectedCustomerId || searchQuery.trim();
-    
+
     if (!customerIdToSave) {
       setError("Please select a Google Ads customer or enter a customer ID");
       return;
@@ -177,9 +174,9 @@ const ConnectGoogleAds = ({ projectId, onSuccess, onClose }: ConnectGoogleAdsPro
         projectId,
         customerId: customerIdToSave.replace(/-/g, ''), // Remove dashes if present
       });
-      
+
       console.log("Save customer response:", response.data);
-      
+
       // Verify the customer was saved
       if (response.data.success) {
         const savedProject = response.data.data;
@@ -296,7 +293,7 @@ const ConnectGoogleAds = ({ projectId, onSuccess, onClose }: ConnectGoogleAdsPro
                   Choose your Google Ads customer account or enter the customer ID manually.
                 </p>
               </div>
-              
+
               {/* Manual Customer ID Entry */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
@@ -332,7 +329,7 @@ const ConnectGoogleAds = ({ projectId, onSuccess, onClose }: ConnectGoogleAdsPro
                       className="pl-10"
                     />
                   </div>
-                  
+
                   {/* Customers List */}
                   {filteredCustomers.length === 0 ? (
                     <div className="text-center py-8 text-slate-500">
@@ -352,11 +349,10 @@ const ConnectGoogleAds = ({ projectId, onSuccess, onClose }: ConnectGoogleAdsPro
                         <button
                           key={customer.customerId}
                           onClick={() => setSelectedCustomerId(customer.customerId)}
-                          className={`w-full text-left rounded-lg border p-4 transition-colors ${
-                            selectedCustomerId === customer.customerId
+                          className={`w-full text-left rounded-lg border p-4 transition-colors ${selectedCustomerId === customer.customerId
                               ? "border-hotel-ocean bg-hotel-foam"
                               : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                          }`}
+                            }`}
                         >
                           <div className="font-semibold text-slate-900">{customer.descriptiveName}</div>
                           <div className="text-xs text-slate-500 mt-1">
@@ -368,13 +364,13 @@ const ConnectGoogleAds = ({ projectId, onSuccess, onClose }: ConnectGoogleAdsPro
                   )}
                 </>
               )}
-              
+
               {customers.length === 0 && !error && (
                 <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-600">
                   No customers found automatically. Please enter your Google Ads customer ID manually below.
                 </div>
               )}
-              
+
               {error && (
                 <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
                   {error}

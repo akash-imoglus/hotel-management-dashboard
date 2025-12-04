@@ -67,6 +67,8 @@ export interface OverviewMetrics {
   sessions: number;
   pageviews: number;
   bounceRate: number;
+  screenPageViews?: number;
+  sessionsPerUser?: number;
   // Additional metrics matching DM Cockpit
   engagementRate?: number;
   averageSessionDuration?: number;
@@ -76,11 +78,46 @@ export interface OverviewMetrics {
   totalRevenue?: number;
   purchaseRevenue?: number;
   averageRevenuePerUser?: number;
+  // Comparison data - percentage change from previous period
+  totalUsersChange?: number;
+  sessionsChange?: number;
+  pageviewsChange?: number;
+  bounceRateChange?: number;
+  engagementRateChange?: number;
+  averageSessionDurationChange?: number;
+  engagedSessionsChange?: number;
+  newUsersChange?: number;
+  conversionsChange?: number;
+  totalRevenueChange?: number;
+  purchaseRevenueChange?: number;
+  averageRevenuePerUserChange?: number;
 }
 
 export interface ChannelMetric {
-  channel: string;
-  value: number;
+  channel?: string;
+  sessionDefaultChannelGroup?: string;
+  value?: number;
+  totalUsers?: number;
+  sessions?: number;
+  bounceRate?: number;
+  averageSessionDuration?: number;
+  conversions?: number;
+  totalRevenue?: number;
+  eventCount?: number;
+  engagementRate?: number;
+  engagedSessions?: number;
+  newUsers?: number;
+  // Comparison data - percentage change from previous period
+  totalUsersChange?: number;
+  sessionsChange?: number;
+  bounceRateChange?: number;
+  averageSessionDurationChange?: number;
+  conversionsChange?: number;
+  totalRevenueChange?: number;
+  eventCountChange?: number;
+  engagementRateChange?: number;
+  engagedSessionsChange?: number;
+  newUsersChange?: number;
 }
 
 export interface DeviceMetric {
@@ -94,8 +131,10 @@ export interface DeviceMetric {
 export interface GeoMetric {
   country: string;
   countryCode?: string;
-  users: number;
+  totalUsers: number;
+  users?: number;
   sessions: number;
+  activeUsers?: number;
 }
 
 export interface LandingPageMetric {
@@ -106,6 +145,22 @@ export interface LandingPageMetric {
   bounceRate?: number;
   averageSessionDuration?: number;
   conversionRate?: number;
+}
+
+export interface SessionSourceMediumMetric {
+  source: string;
+  medium: string;
+  totalUsers: number;
+  sessions: number;
+  conversions: number;
+}
+
+export interface GoogleAdsCampaignMetric {
+  campaignName: string;
+  clicks: number;
+  cost: number;
+  googleAdsConversions: number;
+  conversions: number;
 }
 
 export interface DateRange {
@@ -194,6 +249,8 @@ export interface InstagramInsights {
     profile_links_taps?: number;
   };
   audience?: {
+    city?: Array<{ value: string; count: number }>;
+    country?: Array<{ value: string; count: number }>;
     demographics?: Array<{ value: string; count: number }>;
     reached?: Array<{ value: string; count: number }>;
   };

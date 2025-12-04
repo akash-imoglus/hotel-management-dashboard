@@ -67,20 +67,6 @@ interface YouTubeContent {
   player: string;
 }
 
-interface YouTubeVideoData {
-  videoId: string;
-  title: string;
-  views: number;
-  likes: number;
-  comments: number;
-  shares: number;
-  estimatedMinutesWatched: number;
-  averageViewDuration: number;
-  subscribersGained: number;
-  publishedAt?: string;
-  thumbnailUrl?: string;
-}
-
 interface YouTubeTrafficSource {
   trafficSource: string;
   views: number;

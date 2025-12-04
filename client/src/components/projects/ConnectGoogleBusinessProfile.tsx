@@ -34,7 +34,6 @@ const ConnectGoogleBusinessProfile = ({ projectId, onSuccess, onClose }: Connect
   const [selectedLocationId, setSelectedLocationId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authUrl, setAuthUrl] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Filter locations based on search query
@@ -81,14 +80,13 @@ const ConnectGoogleBusinessProfile = ({ projectId, onSuccess, onClose }: Connect
         `/google-business-profile/auth?projectId=${projectId}`
       );
       if (data.success && data.data.authUrl) {
-        setAuthUrl(data.data.authUrl);
         setStep("oauth");
-        
+
         const width = 600;
         const height = 700;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
-        
+
         const popup = window.open(
           data.data.authUrl,
           "Google Business Profile Authorization",
@@ -98,7 +96,7 @@ const ConnectGoogleBusinessProfile = ({ projectId, onSuccess, onClose }: Connect
         // Listen for message from popup
         const messageListener = (event: MessageEvent) => {
           if (event.origin !== window.location.origin) return;
-          
+
           if (event.data.type === "GBP_OAUTH_SUCCESS" && event.data.projectId === projectId) {
             window.removeEventListener("message", messageListener);
             handleCheckConnection();
@@ -202,7 +200,7 @@ const ConnectGoogleBusinessProfile = ({ projectId, onSuccess, onClose }: Connect
           {/* Step 1: Initial state */}
           {step === "init" && (
             <div className="space-y-4">
-              {error && <ErrorState message={error} />}
+              {error && <ErrorState description={error} />}
               <div className="text-center py-8">
                 <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                   <Link2 className="h-6 w-6 text-blue-600" />
@@ -241,7 +239,7 @@ const ConnectGoogleBusinessProfile = ({ projectId, onSuccess, onClose }: Connect
           {/* Step 3: Select location */}
           {step === "select" && (
             <div className="space-y-4">
-              {error && <ErrorState message={error} />}
+              {error && <ErrorState description={error} />}
 
               {/* Search */}
               {locations.length > 5 && (
@@ -268,11 +266,10 @@ const ConnectGoogleBusinessProfile = ({ projectId, onSuccess, onClose }: Connect
                     <div
                       key={location.locationId}
                       onClick={() => setSelectedLocationId(location.locationId)}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedLocationId === location.locationId
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedLocationId === location.locationId
                           ? "border-blue-500 bg-blue-50"
                           : "border-slate-200 hover:border-slate-300"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">

@@ -47,11 +47,11 @@ export const DropdownMenuTrigger = React.forwardRef<
   if (!context) throw new Error("DropdownMenuTrigger must be used within DropdownMenu");
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
+    return React.cloneElement(children as React.ReactElement<any>, {
       ...props,
       onClick: (e: React.MouseEvent) => {
         context.setOpen(!context.open);
-        props.onClick?.(e);
+        props.onClick?.(e as any);
       },
     });
   }
@@ -100,7 +100,7 @@ export const DropdownMenuItem = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, children, onClick, ...props }, ref) => {
   const context = React.useContext(DropdownMenuContext);
-  
+
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     onClick?.(e);
     context?.setOpen(false);

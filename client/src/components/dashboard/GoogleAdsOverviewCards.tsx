@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import LoadingState from "@/components/common/LoadingState";
 
 interface GoogleAdsOverviewMetrics {
   impressions: number;

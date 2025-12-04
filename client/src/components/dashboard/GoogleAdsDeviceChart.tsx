@@ -40,8 +40,6 @@ const GoogleAdsDeviceChart = ({ data, loading }: GoogleAdsDeviceChartProps) => {
     conversions: item.conversions,
   }));
 
-  const colors = ['#0ea5e9', '#3b82f6', '#6366f1'];
-
   return (
     <Card>
       <CardHeader>

@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, NavLink } from "react-router-dom";
-import { 
-  ChevronDown, 
-  Search, 
-  Plus, 
+import {
+  ChevronDown,
+  Search,
+  Plus,
   LayoutDashboard,
   BarChart3,
   TrendingUp,
@@ -73,7 +73,7 @@ const ProjectSelector = () => {
       const response = await api.get<{ success: boolean; data: Project[] }>("/projects");
       const projectsData = response.data.data || response.data;
       setProjects(Array.isArray(projectsData) ? projectsData : []);
-      
+
       if (projectId) {
         const project = projectsData.find(
           (p: Project) => (p.id ?? p._id) === projectId
@@ -113,13 +113,13 @@ const ProjectSelector = () => {
   };
 
   const displayName = selectedProject?.name || "Select Project";
-  const truncatedName = displayName.length > 20 
-    ? `${displayName.substring(0, 20)}...` 
+  const truncatedName = displayName.length > 20
+    ? `${displayName.substring(0, 20)}...`
     : displayName;
 
   return (
     <>
-      <div 
+      <div
         className={cn(
           "flex-shrink-0 border-r border-slate-200 flex flex-col h-full overflow-hidden relative transition-all duration-300 bg-white",
           isCollapsed ? "w-16" : "w-64"
@@ -151,74 +151,74 @@ const ProjectSelector = () => {
                   <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0 text-slate-400" />
                 </Button>
               </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="start" 
+              <DropdownMenuContent
+                align="start"
                 className="w-64 z-[100] bg-white border-slate-200 shadow-xl rounded-xl p-1"
-            >
-              {/* Search Bar */}
+              >
+                {/* Search Bar */}
                 <div className="px-2 py-2">
-                <div className="relative">
+                  <div className="relative">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
+                    <input
+                      type="text"
                       placeholder="Search projects..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 bg-slate-50 text-slate-900 placeholder:text-slate-400"
-                  />
+                    />
+                  </div>
                 </div>
-              </div>
 
                 <DropdownMenuSeparator className="bg-slate-100" />
 
-              {/* Projects List */}
+                {/* Projects List */}
                 <div className="max-h-64 overflow-y-auto py-1">
-                {loading ? (
-                  <div className="px-2 py-4">
-                    <LoadingState message="Loading..." className="py-2" />
-                  </div>
-                ) : filteredProjects.length === 0 ? (
+                  {loading ? (
+                    <div className="px-2 py-4">
+                      <LoadingState message="Loading..." className="py-2" />
+                    </div>
+                  ) : filteredProjects.length === 0 ? (
                     <div className="px-2 py-4 text-sm text-center text-slate-500">
-                    {searchQuery ? "No projects found" : "No projects"}
-                  </div>
-                ) : (
-                  filteredProjects.map((project) => {
-                    const id = project.id ?? project._id;
-                    const isSelected = id === projectId;
-                    return (
-                      <DropdownMenuItem
-                        key={id}
-                        onClick={() => handleProjectSelect(project)}
+                      {searchQuery ? "No projects found" : "No projects"}
+                    </div>
+                  ) : (
+                    filteredProjects.map((project) => {
+                      const id = project.id ?? project._id;
+                      const isSelected = id === projectId;
+                      return (
+                        <DropdownMenuItem
+                          key={id}
+                          onClick={() => handleProjectSelect(project)}
                           className={cn(
                             "mx-1 rounded-lg cursor-pointer transition-colors",
-                            isSelected 
-                              ? "bg-red-50 text-red-600" 
+                            isSelected
+                              ? "bg-red-50 text-red-600"
                               : "text-slate-700 hover:bg-slate-100"
                           )}
-                      >
-                        <span className="truncate">{project.name}</span>
-                      </DropdownMenuItem>
-                    );
-                  })
-                )}
-              </div>
+                        >
+                          <span className="truncate">{project.name}</span>
+                        </DropdownMenuItem>
+                      );
+                    })
+                  )}
+                </div>
 
                 <DropdownMenuSeparator className="bg-slate-100" />
 
-              {/* Add Project Button */}
-              <DropdownMenuItem
-                onClick={() => navigate("/projects/new")}
+                {/* Add Project Button */}
+                <DropdownMenuItem
+                  onClick={() => navigate("/projects/new")}
                   className="mx-1 rounded-lg text-red-600 hover:bg-red-50 font-medium cursor-pointer"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add New Project
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Project
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ) : (
           <div className="h-16 flex items-center justify-center border-b border-slate-200 bg-slate-50/50">
-            <div 
+            <div
               className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/20"
               title={selectedProject?.name || "No Project"}
             >
@@ -237,32 +237,31 @@ const ProjectSelector = () => {
               </div>
               <p className="text-xs text-slate-700 truncate font-medium">{selectedProject.websiteUrl}</p>
             </div>
-          
-          {projectId && (
-            <ProjectInsightsSection 
-              project={selectedProject} 
-              projectId={projectId}
-              onConnectGA={() => setShowConnectGAModal(true)}
-              onConnectAds={() => setShowConnectAdsModal(true)}
-              onConnectSearchConsole={() => setShowConnectSearchConsoleModal(true)}
-              onConnectYouTube={() => setShowConnectYouTubeModal(true)}
-              onConnectFacebook={() => setShowConnectFacebookModal(true)}
-              onConnectMetaAds={() => setShowConnectMetaAdsModal(true)}
-              onConnectInstagram={() => setShowConnectInstagramModal(true)}
-              onConnectGoogleSheets={() => setShowConnectGoogleSheetsModal(true)}
-              onConnectGoogleDrive={() => setShowConnectGoogleDriveModal(true)}
-              onConnectLinkedIn={() => setShowConnectLinkedInModal(true)}
-              onConnectGBP={() => setShowConnectGBPModal(true)}
-              onConnectionSuccess={handleConnectSuccess}
-            />
-          )}
-        </>
-      )}
-      
-      {selectedProject && isCollapsed && projectId && (
-        <CollapsedProjectNav projectId={projectId} project={selectedProject} />
-      )}
-    </div>
+
+            {projectId && (
+              <ProjectInsightsSection
+                project={selectedProject}
+                projectId={projectId}
+                onConnectGA={() => setShowConnectGAModal(true)}
+                onConnectAds={() => setShowConnectAdsModal(true)}
+                onConnectSearchConsole={() => setShowConnectSearchConsoleModal(true)}
+                onConnectYouTube={() => setShowConnectYouTubeModal(true)}
+                onConnectFacebook={() => setShowConnectFacebookModal(true)}
+                onConnectMetaAds={() => setShowConnectMetaAdsModal(true)}
+                onConnectInstagram={() => setShowConnectInstagramModal(true)}
+                onConnectGoogleSheets={() => setShowConnectGoogleSheetsModal(true)}
+                onConnectGoogleDrive={() => setShowConnectGoogleDriveModal(true)}
+                onConnectLinkedIn={() => setShowConnectLinkedInModal(true)}
+                onConnectGBP={() => setShowConnectGBPModal(true)}
+              />
+            )}
+          </>
+        )}
+
+        {selectedProject && isCollapsed && projectId && (
+          <CollapsedProjectNav projectId={projectId} project={selectedProject} />
+        )}
+      </div>
 
       {/* Connection Modals */}
       {showConnectGAModal && projectId && (
@@ -410,11 +409,10 @@ interface ProjectInsightsSectionProps {
   onConnectGoogleDrive: () => void;
   onConnectLinkedIn: () => void;
   onConnectGBP: () => void;
-  onConnectionSuccess: () => void;
 }
 
-const ProjectInsightsSection = ({ 
-  project, 
+const ProjectInsightsSection = ({
+  project,
   projectId,
   onConnectGA,
   onConnectAds,
@@ -426,8 +424,7 @@ const ProjectInsightsSection = ({
   onConnectGoogleSheets,
   onConnectGoogleDrive,
   onConnectLinkedIn,
-  onConnectGBP,
-  onConnectionSuccess
+  onConnectGBP
 }: ProjectInsightsSectionProps) => {
   const connections: ConnectionStatus[] = [
     { label: "Google Analytics", connected: !!project?.gaPropertyId, route: `/dashboard/${projectId}/analytics`, icon: BarChart3 },
@@ -469,8 +466,8 @@ const ProjectInsightsSection = ({
                 className={({ isActive }) =>
                   cn(
                     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    isActive 
-                      ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25" 
+                    isActive
+                      ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   )
                 }
@@ -606,8 +603,8 @@ const CollapsedProjectNav = ({ projectId, project }: CollapsedProjectNavProps) =
               className={({ isActive }) =>
                 cn(
                   "flex items-center justify-center rounded-xl p-2.5 transition-all duration-200",
-                  isActive 
-                    ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25" 
+                  isActive
+                    ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25"
                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 )
               }

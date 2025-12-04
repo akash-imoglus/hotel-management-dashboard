@@ -22,7 +22,6 @@ const ConnectGoogleAnalytics = ({ projectId, onSuccess, onClose }: ConnectGoogle
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authUrl, setAuthUrl] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Filter properties based on search query (by name or property ID)
@@ -70,14 +69,13 @@ const ConnectGoogleAnalytics = ({ projectId, onSuccess, onClose }: ConnectGoogle
         `/google/auth?projectId=${projectId}`
       );
       if (data.success && data.data.authUrl) {
-        setAuthUrl(data.data.authUrl);
         setStep("oauth");
         // Open OAuth window
         const width = 600;
         const height = 700;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
-        
+
         const popup = window.open(
           data.data.authUrl,
           "Google Analytics Authorization",
@@ -87,7 +85,7 @@ const ConnectGoogleAnalytics = ({ projectId, onSuccess, onClose }: ConnectGoogle
         // Listen for message from popup
         const messageListener = (event: MessageEvent) => {
           if (event.origin !== window.location.origin) return;
-          
+
           if (event.data.type === "GA_OAUTH_SUCCESS" && event.data.projectId === projectId) {
             window.removeEventListener("message", messageListener);
             handleCheckConnection();
@@ -157,9 +155,9 @@ const ConnectGoogleAnalytics = ({ projectId, onSuccess, onClose }: ConnectGoogle
         projectId,
         propertyId: selectedPropertyId,
       });
-      
+
       console.log("Save property response:", response.data);
-      
+
       // Verify the property was saved
       if (response.data.success) {
         const savedProject = response.data.data;
@@ -294,7 +292,7 @@ const ConnectGoogleAnalytics = ({ projectId, onSuccess, onClose }: ConnectGoogle
                       className="pl-10"
                     />
                   </div>
-                  
+
                   {/* Properties List */}
                   {filteredProperties.length === 0 ? (
                     <div className="text-center py-8 text-slate-500">
@@ -314,11 +312,10 @@ const ConnectGoogleAnalytics = ({ projectId, onSuccess, onClose }: ConnectGoogle
                         <button
                           key={property.propertyId}
                           onClick={() => setSelectedPropertyId(property.propertyId)}
-                          className={`w-full text-left rounded-lg border p-4 transition-colors ${
-                            selectedPropertyId === property.propertyId
+                          className={`w-full text-left rounded-lg border p-4 transition-colors ${selectedPropertyId === property.propertyId
                               ? "border-hotel-ocean bg-hotel-foam"
                               : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                          }`}
+                            }`}
                         >
                           <div className="font-semibold text-slate-900">{property.displayName}</div>
                           <div className="text-xs text-slate-500 mt-1">
@@ -328,7 +325,7 @@ const ConnectGoogleAnalytics = ({ projectId, onSuccess, onClose }: ConnectGoogle
                       ))}
                     </div>
                   )}
-                  
+
                   {searchQuery && filteredProperties.length > 0 && (
                     <p className="text-xs text-slate-500">
                       Showing {filteredProperties.length} of {properties.length} properties

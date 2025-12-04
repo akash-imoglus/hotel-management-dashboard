@@ -16,9 +16,11 @@ import {
   Search,
   Sparkles,
   BarChart3,
-  Eye
+  Eye,
+  AlertCircle,
+  ExternalLink
 } from "lucide-react";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import ReactCountryFlag from "react-country-flag";
 import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
 import LoadingState from "@/components/common/LoadingState";
@@ -404,6 +406,37 @@ const GoogleAdsPage = () => {
       />
 
       {/* Overview Cards */}
+      {adsErrors.overview && adsErrors.overview.includes('Test Mode') && (
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="pt-6">
+            <div className="flex gap-4">
+              <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-amber-900 mb-2">Developer Token in Test Mode</h3>
+                <div className="text-sm text-amber-800 space-y-2">
+                  <p>Your Google Ads developer token can only access <strong>TEST accounts</strong>, not regular Google Ads accounts.</p>
+                  <p className="font-medium">To fix this, choose one option:</p>
+                  <div className="ml-4 space-y-1">
+                    <p><strong>Option 1:</strong> Create a TEST Manager Account (for development)</p>
+                    <ol className="list-decimal ml-6 space-y-1">
+                      <li>Visit <a href="https://ads.google.com/aw/overview" target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-1">Google Ads <ExternalLink className="h-3 w-3" /></a> (use a separate Google account)</li>
+                      <li>Click the blue button "Create a test manager account"</li>
+                      <li>Create test client accounts under this test manager</li>
+                      <li>Use the TEST client customer ID (shows "Test account" label in red)</li>
+                    </ol>
+                    <p className="mt-2"><strong>Option 2:</strong> Apply for Standard Access (for production)</p>
+                    <ol className="list-decimal ml-6 space-y-1">
+                      <li>Visit <a href="https://ads.google.com/aw/apicenter" target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-1">API Center <ExternalLink className="h-3 w-3" /></a></li>
+                      <li>Apply for Standard Access (takes 1-2 business days)</li>
+                      <li>Use with regular Google Ads accounts after approval</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {loadingAds && !overview ? (
         <LoadingState message="Loading ads data..." />
       ) : adsErrors.overview && !overview ? (

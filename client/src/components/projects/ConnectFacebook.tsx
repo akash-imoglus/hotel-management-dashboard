@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import LoadingState from "@/components/common/LoadingState";
-import ErrorState from "@/components/common/ErrorState";
 import api from "@/lib/api";
 import type { FacebookPage } from "@/types";
 
@@ -22,7 +21,6 @@ const ConnectFacebook = ({ projectId, onSuccess, onClose }: ConnectFacebookProps
   const [selectedPageId, setSelectedPageId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authUrl, setAuthUrl] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Filter pages based on search query (by name or category)
@@ -71,14 +69,13 @@ const ConnectFacebook = ({ projectId, onSuccess, onClose }: ConnectFacebookProps
         `/facebook/auth?projectId=${projectId}`
       );
       if (data.success && data.data.authUrl) {
-        setAuthUrl(data.data.authUrl);
         setStep("oauth");
         // Open OAuth window
         const width = 600;
         const height = 700;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
-        
+
         const popup = window.open(
           data.data.authUrl,
           "Facebook Authorization",
@@ -88,7 +85,7 @@ const ConnectFacebook = ({ projectId, onSuccess, onClose }: ConnectFacebookProps
         // Listen for message from popup
         const messageListener = (event: MessageEvent) => {
           if (event.origin !== window.location.origin) return;
-          
+
           if (event.data.type === "FACEBOOK_OAUTH_SUCCESS" && event.data.projectId === projectId) {
             window.removeEventListener("message", messageListener);
             handleCheckConnection();
@@ -165,19 +162,19 @@ const ConnectFacebook = ({ projectId, onSuccess, onClose }: ConnectFacebookProps
     try {
       setLoading(true);
       setError(null);
-      
+
       // Find the selected page to get its access token
       const selectedPage = pages.find(p => p.id === selectedPageId);
       const pageAccessToken = selectedPage?.access_token;
-      
+
       const response = await api.post<{ success: boolean; data: any }>("/facebook/page", {
         projectId,
         pageId: selectedPageId,
         pageAccessToken, // Send the page access token for insights
       });
-      
+
       console.log("Save page response:", response.data);
-      
+
       // Verify the page was saved
       if (response.data.success) {
         const savedProject = response.data.data;
@@ -301,7 +298,7 @@ const ConnectFacebook = ({ projectId, onSuccess, onClose }: ConnectFacebookProps
                   <label className="text-sm font-medium text-slate-700">
                     Available Pages
                   </label>
-                  
+
                   {/* Search Bar */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -313,7 +310,7 @@ const ConnectFacebook = ({ projectId, onSuccess, onClose }: ConnectFacebookProps
                       className="pl-10"
                     />
                   </div>
-                  
+
                   {/* Pages List */}
                   {filteredPages.length === 0 ? (
                     <div className="text-center py-8 text-slate-500">
@@ -333,11 +330,10 @@ const ConnectFacebook = ({ projectId, onSuccess, onClose }: ConnectFacebookProps
                         <button
                           key={page.id}
                           onClick={() => setSelectedPageId(page.id)}
-                          className={`w-full text-left rounded-lg border p-4 transition-colors ${
-                            selectedPageId === page.id
+                          className={`w-full text-left rounded-lg border p-4 transition-colors ${selectedPageId === page.id
                               ? "border-hotel-ocean bg-hotel-foam"
                               : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                          }`}
+                            }`}
                         >
                           <div className="font-semibold text-slate-900">{page.name}</div>
                           <div className="text-xs text-slate-500 mt-1">
@@ -347,7 +343,7 @@ const ConnectFacebook = ({ projectId, onSuccess, onClose }: ConnectFacebookProps
                       ))}
                     </div>
                   )}
-                  
+
                   {searchQuery && filteredPages.length > 0 && (
                     <p className="text-xs text-slate-500">
                       Showing {filteredPages.length} of {pages.length} pages
@@ -359,7 +355,7 @@ const ConnectFacebook = ({ projectId, onSuccess, onClose }: ConnectFacebookProps
                   No pages found. Please ensure you have pages set up in your Facebook account.
                 </div>
               )}
-              
+
               {error && (
                 <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
                   {error}

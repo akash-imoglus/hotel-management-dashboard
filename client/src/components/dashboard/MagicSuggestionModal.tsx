@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  X, 
-  Sparkles, 
-  RefreshCw, 
-  Zap, 
-  AlertTriangle, 
-  CheckCircle,
+import {
+  X,
+  Sparkles,
+  RefreshCw,
+  Zap,
+  AlertTriangle,
   Lightbulb,
   Target,
   Clock,
@@ -107,7 +106,7 @@ const MagicSuggestionModal = ({ isOpen, onClose, projectId, metrics }: MagicSugg
               <div className="relative px-6 py-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <motion.div 
+                    <motion.div
                       className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm"
                       animate={{ rotate: [0, 5, -5, 0] }}
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -134,11 +133,10 @@ const MagicSuggestionModal = ({ isOpen, onClose, projectId, metrics }: MagicSugg
               <div className="px-6 py-3 bg-slate-100/80 border-b border-slate-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                      fromCache 
-                        ? "bg-blue-100 text-blue-700" 
+                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${fromCache
+                        ? "bg-blue-100 text-blue-700"
                         : "bg-emerald-100 text-emerald-700"
-                    }`}>
+                      }`}>
                       {fromCache ? (
                         <>
                           <Clock className="h-3.5 w-3.5" />
@@ -230,7 +228,7 @@ const MagicSuggestionModal = ({ isOpen, onClose, projectId, metrics }: MagicSugg
                           let bgColor = "from-slate-100 to-slate-50";
                           let iconBg = "bg-slate-200 text-slate-600";
                           let borderColor = "border-slate-200";
-                          
+
                           if (text.includes("Attention") || text.includes("🔴")) {
                             icon = <AlertTriangle className="h-5 w-5" />;
                             bgColor = "from-red-50 to-orange-50";
@@ -247,7 +245,7 @@ const MagicSuggestionModal = ({ isOpen, onClose, projectId, metrics }: MagicSugg
                             iconBg = "bg-amber-100 text-amber-600";
                             borderColor = "border-amber-200";
                           }
-                          
+
                           return (
                             <div className={`flex items-center gap-3 px-4 py-3 bg-gradient-to-r ${bgColor} rounded-xl border ${borderColor} mt-6 mb-4 first:mt-0`}>
                               <div className={`p-2 rounded-lg ${iconBg}`}>
@@ -304,8 +302,8 @@ const MagicSuggestionModal = ({ isOpen, onClose, projectId, metrics }: MagicSugg
                   <Sparkles className="h-3.5 w-3.5" />
                   <span>Powered by AI • Cached for 6 hours</span>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={onClose}
                   className="border-slate-300 hover:bg-slate-100"
                 >

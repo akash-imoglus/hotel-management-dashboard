@@ -7,7 +7,7 @@ interface LandingPagesTableProps {
   loading?: boolean;
 }
 
-const LandingPagesTable = ({ data, loading }: LandingPagesTableProps) => (
+const LandingPagesTable = ({ data }: LandingPagesTableProps) => (
   <Card className="h-full bg-white">
     <CardHeader className="pb-2">
       <div className="flex items-center gap-2">
@@ -33,7 +33,7 @@ const LandingPagesTable = ({ data, loading }: LandingPagesTableProps) => (
             const pagePath = page.pagePath || (page as any).landingPage || (page as any).page || '';
             const sessions = page.sessions || (page as any).value || 0;
             const conversionRate = page.conversionRate;
-            
+
             return (
               <tr key={`${pagePath}-${index}`} className="hover:bg-slate-50 transition-colors">
                 <td className="py-3 px-3 max-w-xs" title={pagePath}>

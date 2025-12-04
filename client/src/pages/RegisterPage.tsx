@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
-import { cn } from "@/lib/utils";
 import axios from "axios";
 
 const registerSchema = z.object({

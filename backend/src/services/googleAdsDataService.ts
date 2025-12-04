@@ -60,6 +60,9 @@ const executeGaqlQuery = async (
     throw new Error('Google Ads Developer Token is not configured. Please add GOOGLE_ADS_DEVELOPER_TOKEN to your .env file.');
   }
   
+  console.log(`[Google Ads API] Developer token configured: ${ENV.GOOGLE_ADS_DEVELOPER_TOKEN.substring(0, 4)}...${ENV.GOOGLE_ADS_DEVELOPER_TOKEN.substring(ENV.GOOGLE_ADS_DEVELOPER_TOKEN.length - 4)}`);
+  console.log(`[Google Ads API] Developer token length: ${ENV.GOOGLE_ADS_DEVELOPER_TOKEN.length} characters`);
+  
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -203,16 +206,35 @@ class GoogleAdsDataService implements IGoogleAdsDataService {
       };
     } catch (error: any) {
       console.error(`[Google Ads Data Service] Error fetching overview:`, error.message);
+      console.error(`[Google Ads Data Service] Full error:`, error);
       
       // Check for common API errors and provide helpful messages
-      if (error.message.includes('UNIMPLEMENTED')) {
-        throw new Error('Google Ads API access pending approval. Your developer token is in Test Account mode. Apply for Standard Access at https://ads.google.com/aw/apicenter to use with production accounts.');
+      if (error.message.includes('UNIMPLEMENTED') || error.message.includes('Test Account mode')) {
+        throw new Error(
+          'Google Ads API Error: Developer token in Test Mode can only access TEST accounts. ' +
+          '\n\nTo fix this:\n' +
+          '1. Create a TEST Manager Account at: https://ads.google.com/aw/overview (use a separate Google account)\n' +
+          '2. When creating, you\'ll see a blue button "Create a test manager account"\n' +
+          '3. Create test client accounts under this test manager\n' +
+          '4. Use the TEST client customer ID (will show "Test account" label in red)\n' +
+          '5. OR apply for Standard Access at: https://ads.google.com/aw/apicenter'
+        );
       }
-      if (error.message.includes('PERMISSION_DENIED')) {
-        throw new Error('Permission denied. Make sure your Google Ads account has proper access to this customer ID.');
+      if (error.message.includes('PERMISSION_DENIED') || error.message.includes('permission')) {
+        throw new Error('Permission denied. Verify: 1) Your Google Ads account has access to this customer ID, 2) Developer token is approved, 3) OAuth credentials are correct.');
       }
-      if (error.message.includes('INVALID_CUSTOMER_ID')) {
-        throw new Error('Invalid Customer ID. Please check the Google Ads Customer ID format (XXX-XXX-XXXX without dashes).');
+      if (error.message.includes('INVALID_CUSTOMER_ID') || error.message.includes('customer')) {
+        throw new Error('Invalid Customer ID. Format should be: 1234567890 (10 digits, no dashes). Find it in your Google Ads account under "Customer ID".');
+      }
+      if (error.message.includes('INVALID_DEVELOPER_TOKEN') || error.message.includes('developer_token') || error.message.includes('developer-token')) {
+        throw new Error('Invalid Developer Token. Please verify GOOGLE_ADS_DEVELOPER_TOKEN in your .env file. Get it from: https://ads.google.com/aw/apicenter');
+      }
+      if (error.message.includes('DEVELOPER_TOKEN_NOT_APPROVED') || error.message.includes('not approved')) {
+        throw new Error(
+          'Developer token not approved for this account type. ' +
+          '\n\nTest tokens only work with TEST accounts. ' +
+          '\nCreate a test manager account or apply for Standard Access.'
+        );
       }
       
       throw new Error(`Failed to fetch Google Ads overview: ${error.message}`);

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Instagram as InstagramIcon, 
-  Link2, 
-  Users, 
-  Eye, 
+import {
+  Instagram as InstagramIcon,
+  Link2,
+  Users,
+  Eye,
   Heart,
   MessageCircle,
   Share2,
@@ -18,7 +18,7 @@ import {
   MapPin,
   BarChart3
 } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import ReactCountryFlag from "react-country-flag";
 import LoadingState from "@/components/common/LoadingState";
 import ErrorState from "@/components/common/ErrorState";
@@ -163,14 +163,10 @@ const InstagramPage = () => {
     color: COLORS[i % COLORS.length]
   })) || [];
 
-  const countryChartData = insights?.audience?.country?.slice(0, 5).map((item, i) => ({
-    name: item.value,
-    value: item.count,
-    color: COLORS[i % COLORS.length]
-  })) || [];
+
 
   return (
-    <motion.section 
+    <motion.section
       className="space-y-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -431,10 +427,10 @@ const InstagramPage = () => {
                                 <Cell key={`cell-${index}`} fill={entry.color} />
                               ))}
                             </Pie>
-                            <Tooltip 
+                            <Tooltip
                               formatter={(value: number) => [formatNumber(value), 'Followers']}
-                              contentStyle={{ 
-                                backgroundColor: 'white', 
+                              contentStyle={{
+                                backgroundColor: 'white',
                                 border: '1px solid #e2e8f0',
                                 borderRadius: '8px'
                               }}
@@ -445,8 +441,8 @@ const InstagramPage = () => {
                       <div className="flex-1 space-y-2">
                         {insights.audience.city.slice(0, 5).map((item, index) => (
                           <div key={item.value} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
+                            <div
+                              className="w-3 h-3 rounded-full"
                               style={{ backgroundColor: COLORS[index % COLORS.length] }}
                             />
                             <span className="flex-1 text-sm font-medium text-slate-700">{item.value}</span>
@@ -476,7 +472,7 @@ const InstagramPage = () => {
                         const total = insights.audience?.country?.reduce((a, b) => a + b.count, 0) || 1;
                         const percentage = ((item.count / total) * 100).toFixed(1);
                         return (
-                          <motion.div 
+                          <motion.div
                             key={item.value}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -490,9 +486,9 @@ const InstagramPage = () => {
                               <span className="text-xs text-slate-500">{percentage}%</span>
                             </div>
                             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full rounded-full" 
-                                style={{ 
+                              <div
+                                className="h-full rounded-full"
+                                style={{
                                   width: `${percentage}%`,
                                   background: `linear-gradient(90deg, ${COLORS[index % COLORS.length]}, ${COLORS[(index + 1) % COLORS.length]})`
                                 }}

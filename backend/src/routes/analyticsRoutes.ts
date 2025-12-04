@@ -12,6 +12,8 @@ import {
   getSourceMediumCampaign,
   getRevenueMetrics,
   getTimeBasedAnalytics,
+  getSessionSourceMedium,
+  getGoogleAdsCampaigns,
 } from '../controllers/analyticsController';
 import { authenticate } from '../middleware/authMiddleware';
 
@@ -29,5 +31,7 @@ router.get('/campaigns/:projectId', authenticate, getCampaignData);
 router.get('/source-medium-campaign/:projectId', authenticate, getSourceMediumCampaign);
 router.get('/revenue/:projectId', authenticate, getRevenueMetrics);
 router.get('/time-based/:projectId', authenticate, getTimeBasedAnalytics);
+router.get('/session-source-medium/:projectId', authenticate, getSessionSourceMedium);
+router.get('/google-ads-campaigns/:projectId', authenticate, getGoogleAdsCampaigns);
 
 export default router;

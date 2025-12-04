@@ -11,15 +11,11 @@ import {
   MousePointer,
   TrendingUp,
   Monitor,
-  Smartphone,
-  Tablet,
   Globe,
   BarChart3,
-  ArrowUpRight,
-  ArrowDownRight,
   Percent
 } from "lucide-react";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import ReactCountryFlag from "react-country-flag";
 import DateRangeSelector from "@/components/dashboard/DateRangeSelector";
 import LoadingState from "@/components/common/LoadingState";
@@ -75,12 +71,7 @@ const getCountryCode = (country: string) => {
   return countryCodeMap[lower] || country.slice(0, 2).toUpperCase();
 };
 
-const getDeviceIcon = (device: string) => {
-  const d = device.toLowerCase();
-  if (d.includes("mobile")) return Smartphone;
-  if (d.includes("tablet")) return Tablet;
-  return Monitor;
-};
+
 
 // Helper to detect token expiration errors
 const isTokenError = (errorMsg: string) => {
@@ -441,7 +432,7 @@ const GoogleAnalyticsPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-orange-100 text-sm font-medium">Users</p>
-                    <p className="text-3xl font-bold mt-1">{formatNumber(overview.totalUsers || 0)}</p>
+                    <p className="text-3xl font-bold mt-1">{formatNumber(overview?.totalUsers || 0)}</p>
                   </div>
                   <div className="p-3 bg-white/20 rounded-xl">
                     <Users className="h-6 w-6" />
@@ -457,7 +448,7 @@ const GoogleAnalyticsPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-blue-100 text-sm font-medium">Sessions</p>
-                    <p className="text-3xl font-bold mt-1">{formatNumber(overview.sessions || 0)}</p>
+                    <p className="text-3xl font-bold mt-1">{formatNumber(overview?.sessions || 0)}</p>
                   </div>
                   <div className="p-3 bg-white/20 rounded-xl">
                     <MousePointer className="h-6 w-6" />
@@ -473,7 +464,7 @@ const GoogleAnalyticsPage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-emerald-100 text-sm font-medium">Page Views</p>
-                    <p className="text-3xl font-bold mt-1">{formatNumber(overview.screenPageViews || 0)}</p>
+                    <p className="text-3xl font-bold mt-1">{formatNumber(overview?.screenPageViews || 0)}</p>
                   </div>
                   <div className="p-3 bg-white/20 rounded-xl">
                     <Eye className="h-6 w-6" />
@@ -490,7 +481,7 @@ const GoogleAnalyticsPage = () => {
                   <div>
                     <p className="text-purple-100 text-sm font-medium">Bounce Rate</p>
                     <p className="text-3xl font-bold mt-1">
-                      {(overview.bounceRate || 0).toFixed(1)}%
+                      {(overview?.bounceRate || 0).toFixed(1)}%
                     </p>
                   </div>
                   <div className="p-3 bg-white/20 rounded-xl">
@@ -508,7 +499,7 @@ const GoogleAnalyticsPage = () => {
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Avg. Session Duration</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">
-                      {formatDuration(overview.averageSessionDuration || 0)}
+                      {formatDuration(overview?.averageSessionDuration || 0)}
                     </p>
                   </div>
                   <div className="p-3 bg-orange-100 rounded-xl">
@@ -526,7 +517,7 @@ const GoogleAnalyticsPage = () => {
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Engagement Rate</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">
-                      {(overview.engagementRate || 0).toFixed(1)}%
+                      {(overview?.engagementRate || 0).toFixed(1)}%
                     </p>
                   </div>
                   <div className="p-3 bg-emerald-100 rounded-xl">
@@ -544,7 +535,7 @@ const GoogleAnalyticsPage = () => {
                   <div>
                     <p className="text-slate-500 text-sm font-medium">New Users</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">
-                      {formatNumber(overview.newUsers || 0)}
+                      {formatNumber(overview?.newUsers || 0)}
                     </p>
                   </div>
                   <div className="p-3 bg-blue-100 rounded-xl">
@@ -562,7 +553,7 @@ const GoogleAnalyticsPage = () => {
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Sessions/User</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">
-                      {(overview.sessionsPerUser || 0).toFixed(2)}
+                      {(overview?.sessionsPerUser || 0).toFixed(2)}
                     </p>
                   </div>
                   <div className="p-3 bg-purple-100 rounded-xl">
@@ -572,77 +563,79 @@ const GoogleAnalyticsPage = () => {
               </CardContent>
             </Card>
           </motion.div>
-        </div>
+        </div >
       ) : null}
 
       {/* Channels Table */}
-      {channels.length > 0 && (
-        <Card className="bg-white overflow-hidden">
-          <CardHeader>
-            <CardTitle className="text-slate-900 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-orange-600" />
-              Traffic Channels
-            </CardTitle>
-            <CardDescription className="text-slate-500">
-              Session distribution by acquisition channel
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Channel</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Users</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Sessions</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Bounce Rate</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Avg Duration</th>
-                    <th className="text-right px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Conversions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {channels.map((channel, index) => (
-                    <motion.tr
-                      key={index}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.02 }}
-                      className="hover:bg-orange-50/50 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                          />
-                          <span className="font-medium text-slate-900">
-                            {channel.channel || channel.sessionDefaultChannelGroup}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm font-medium text-slate-900">
-                        {formatNumber(channel.totalUsers || 0)}
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {formatNumber(channel.sessions || 0)}
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {(channel.bounceRate || 0).toFixed(1)}%
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {formatDuration(channel.averageSessionDuration || 0)}
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium text-emerald-600">
-                        {formatNumber(channel.conversions || 0)}
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {
+        channels.length > 0 && (
+          <Card className="bg-white overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-slate-900 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-orange-600" />
+                Traffic Channels
+              </CardTitle>
+              <CardDescription className="text-slate-500">
+                Session distribution by acquisition channel
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Channel</th>
+                      <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Users</th>
+                      <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Sessions</th>
+                      <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Bounce Rate</th>
+                      <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Avg Duration</th>
+                      <th className="text-right px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Conversions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {channels.map((channel, index) => (
+                      <motion.tr
+                        key={index}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: index * 0.02 }}
+                        className="hover:bg-orange-50/50 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            />
+                            <span className="font-medium text-slate-900">
+                              {channel.channel || channel.sessionDefaultChannelGroup}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-right text-sm font-medium text-slate-900">
+                          {formatNumber(channel.totalUsers || 0)}
+                        </td>
+                        <td className="px-4 py-4 text-right text-sm text-slate-700">
+                          {formatNumber(channel.sessions || 0)}
+                        </td>
+                        <td className="px-4 py-4 text-right text-sm text-slate-700">
+                          {(channel.bounceRate || 0).toFixed(1)}%
+                        </td>
+                        <td className="px-4 py-4 text-right text-sm text-slate-700">
+                          {formatDuration(channel.averageSessionDuration || 0)}
+                        </td>
+                        <td className="px-6 py-4 text-right text-sm font-medium text-emerald-600">
+                          {formatNumber(channel.conversions || 0)}
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      }
 
       {/* Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -694,7 +687,7 @@ const GoogleAnalyticsPage = () => {
                         style={{ backgroundColor: channel.color }}
                       />
                       <span className="flex-1 text-sm font-medium text-slate-700 truncate">{channel.name}</span>
-                      <span className="text-sm font-bold text-slate-900">{formatNumber(channel.value)}</span>
+                      <span className="text-sm font-bold text-slate-900">{formatNumber(channel.value || 0)}</span>
                     </div>
                   ))}
                 </div>
@@ -745,115 +738,121 @@ const GoogleAnalyticsPage = () => {
       </div>
 
       {/* Top Countries */}
-      {geo.length > 0 && (
-        <Card className="bg-white">
-          <CardHeader>
-            <CardTitle className="text-slate-900 flex items-center gap-2">
-              <Globe className="h-5 w-5 text-emerald-600" />
-              Top Countries
-            </CardTitle>
-            <CardDescription className="text-slate-500">
-              Geographic distribution of your audience
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {geo.slice(0, 12).map((country, index) => {
-                const code = getCountryCode(country.country);
-                return (
-                  <motion.div
-                    key={country.country}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.03 }}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
-                  >
-                    <span className="text-2xl">
-                      <ReactCountryFlag countryCode={code} svg />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 truncate">{country.country}</p>
-                      <p className="text-xs text-slate-500">{formatNumber(country.sessions || country.activeUsers || 0)} sessions</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-slate-900">{formatNumber(country.totalUsers || 0)}</p>
-                      <p className="text-xs text-slate-500">users</p>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {
+        geo.length > 0 && (
+          <Card className="bg-white">
+            <CardHeader>
+              <CardTitle className="text-slate-900 flex items-center gap-2">
+                <Globe className="h-5 w-5 text-emerald-600" />
+                Top Countries
+              </CardTitle>
+              <CardDescription className="text-slate-500">
+                Geographic distribution of your audience
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {geo.slice(0, 12).map((country, index) => {
+                  const code = getCountryCode(country.country);
+                  return (
+                    <motion.div
+                      key={country.country}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
+                    >
+                      <span className="text-2xl">
+                        <ReactCountryFlag countryCode={code} svg />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 truncate">{country.country}</p>
+                        <p className="text-xs text-slate-500">{formatNumber(country.sessions || country.activeUsers || 0)} sessions</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-slate-900">{formatNumber(country.totalUsers || 0)}</p>
+                        <p className="text-xs text-slate-500">users</p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )
+      }
 
       {/* Top Landing Pages */}
-      {landingPages.length > 0 && (
-        <Card className="bg-white overflow-hidden">
-          <CardHeader>
-            <CardTitle className="text-slate-900 flex items-center gap-2">
-              <Eye className="h-5 w-5 text-cyan-600" />
-              Top Landing Pages
-            </CardTitle>
-            <CardDescription className="text-slate-500">
-              Most visited entry points to your site
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Page</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Sessions</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Users</th>
-                    <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Bounce Rate</th>
-                    <th className="text-right px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Avg Duration</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {landingPages.slice(0, 10).map((page, index) => (
-                    <motion.tr
-                      key={index}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.02 }}
-                      className="hover:bg-cyan-50/50 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-slate-900 max-w-md truncate" title={page.landingPage || page.pagePath}>
-                          {page.landingPage || page.pagePath || '(not set)'}
-                        </p>
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm font-medium text-slate-900">
-                        {formatNumber(page.sessions || 0)}
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {formatNumber(page.totalUsers || 0)}
-                      </td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-700">
-                        {(page.bounceRate || 0).toFixed(1)}%
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm text-slate-700">
-                        {formatDuration(page.averageSessionDuration || 0)}
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {
+        landingPages.length > 0 && (
+          <Card className="bg-white overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-slate-900 flex items-center gap-2">
+                <Eye className="h-5 w-5 text-cyan-600" />
+                Top Landing Pages
+              </CardTitle>
+              <CardDescription className="text-slate-500">
+                Most visited entry points to your site
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+                      <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Page</th>
+                      <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Sessions</th>
+                      <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Users</th>
+                      <th className="text-right px-4 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Bounce Rate</th>
+                      <th className="text-right px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Avg Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {landingPages.slice(0, 10).map((page, index) => (
+                      <motion.tr
+                        key={index}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: index * 0.02 }}
+                        className="hover:bg-cyan-50/50 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-slate-900 max-w-md truncate" title={page.landingPage || page.pagePath}>
+                            {page.landingPage || page.pagePath || '(not set)'}
+                          </p>
+                        </td>
+                        <td className="px-4 py-4 text-right text-sm font-medium text-slate-900">
+                          {formatNumber(page.sessions || 0)}
+                        </td>
+                        <td className="px-4 py-4 text-right text-sm text-slate-700">
+                          {formatNumber(page.totalUsers || 0)}
+                        </td>
+                        <td className="px-4 py-4 text-right text-sm text-slate-700">
+                          {(page.bounceRate || 0).toFixed(1)}%
+                        </td>
+                        <td className="px-6 py-4 text-right text-sm text-slate-700">
+                          {formatDuration(page.averageSessionDuration || 0)}
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      }
 
-      {showConnectModal && projectId && (
-        <ConnectGoogleAnalytics
-          projectId={projectId}
-          onSuccess={handleConnectSuccess}
-          onClose={() => setShowConnectModal(false)}
-        />
-      )}
-    </motion.section>
+      {
+        showConnectModal && projectId && (
+          <ConnectGoogleAnalytics
+            projectId={projectId}
+            onSuccess={handleConnectSuccess}
+            onClose={() => setShowConnectModal(false)}
+          />
+        )
+      }
+    </motion.section >
   );
 };
 

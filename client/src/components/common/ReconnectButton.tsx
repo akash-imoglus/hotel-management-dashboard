@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  RefreshCcw, 
-  AlertCircle, 
-  CheckCircle, 
+import {
+  RefreshCcw,
+  AlertCircle,
+  CheckCircle,
   ExternalLink,
   Shield,
   Zap,
-  ArrowRight,
   X,
   Loader2,
   Search
@@ -24,7 +23,7 @@ interface ReconnectButtonProps {
   service: 'google-analytics' | 'google-ads' | 'google-search-console' | 'youtube' | 'facebook' | 'instagram' | 'meta-ads' | 'linkedin' | 'google-sheets' | 'google-drive';
   projectId: string;
   onReconnectSuccess?: () => void;
-  variant?: 'default' | 'outline' | 'ghost' | 'destructive' | 'secondary' | 'link';
+  variant?: 'default' | 'outline' | 'ghost' | 'destructive' | 'secondary';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
 }
@@ -39,9 +38,9 @@ interface SelectableItem {
   siteUrl?: string;
 }
 
-const SERVICE_CONFIG: Record<string, { 
-  name: string; 
-  authEndpoint: string; 
+const SERVICE_CONFIG: Record<string, {
+  name: string;
+  authEndpoint: string;
   itemsEndpoint: string;
   saveEndpoint: string;
   itemIdField: string;
@@ -51,9 +50,9 @@ const SERVICE_CONFIG: Record<string, {
   description: string;
   itemLabel: string;
 }> = {
-  'google-analytics': { 
-    name: 'Google Analytics', 
-    authEndpoint: '/google/auth', 
+  'google-analytics': {
+    name: 'Google Analytics',
+    authEndpoint: '/google/auth',
     itemsEndpoint: '/google/properties',
     saveEndpoint: '/google/property',
     itemIdField: 'propertyId',
@@ -63,9 +62,9 @@ const SERVICE_CONFIG: Record<string, {
     description: 'Track website visitors, sessions, and user behavior',
     itemLabel: 'Property'
   },
-  'google-ads': { 
-    name: 'Google Ads', 
-    authEndpoint: '/google-ads/auth', 
+  'google-ads': {
+    name: 'Google Ads',
+    authEndpoint: '/google-ads/auth',
     itemsEndpoint: '/google-ads/customers',
     saveEndpoint: '/google-ads/customer',
     itemIdField: 'customerId',
@@ -75,9 +74,9 @@ const SERVICE_CONFIG: Record<string, {
     description: 'Monitor ad campaigns, clicks, and conversions',
     itemLabel: 'Customer Account'
   },
-  'google-search-console': { 
-    name: 'Search Console', 
-    authEndpoint: '/gsc/auth', 
+  'google-search-console': {
+    name: 'Search Console',
+    authEndpoint: '/gsc/auth',
     itemsEndpoint: '/gsc/sites',
     saveEndpoint: '/gsc/site',
     itemIdField: 'siteUrl',
@@ -87,9 +86,9 @@ const SERVICE_CONFIG: Record<string, {
     description: 'View search performance and SEO insights',
     itemLabel: 'Site'
   },
-  'youtube': { 
-    name: 'YouTube', 
-    authEndpoint: '/youtube/auth', 
+  'youtube': {
+    name: 'YouTube',
+    authEndpoint: '/youtube/auth',
     itemsEndpoint: '/youtube/channels',
     saveEndpoint: '/youtube/channel',
     itemIdField: 'channelId',
@@ -99,9 +98,9 @@ const SERVICE_CONFIG: Record<string, {
     description: 'Access video analytics and channel metrics',
     itemLabel: 'Channel'
   },
-  'facebook': { 
-    name: 'Facebook', 
-    authEndpoint: '/facebook/auth', 
+  'facebook': {
+    name: 'Facebook',
+    authEndpoint: '/facebook/auth',
     itemsEndpoint: '/facebook/pages',
     saveEndpoint: '/facebook/page',
     itemIdField: 'pageId',
@@ -111,9 +110,9 @@ const SERVICE_CONFIG: Record<string, {
     description: 'Sync page insights and engagement data',
     itemLabel: 'Page'
   },
-  'instagram': { 
-    name: 'Instagram', 
-    authEndpoint: '/instagram/auth-url', 
+  'instagram': {
+    name: 'Instagram',
+    authEndpoint: '/instagram/auth-url',
     itemsEndpoint: '/instagram/accounts',
     saveEndpoint: '/instagram/select',
     itemIdField: 'accountId',
@@ -123,9 +122,9 @@ const SERVICE_CONFIG: Record<string, {
     description: 'Connect posts, stories, and follower analytics',
     itemLabel: 'Account'
   },
-  'meta-ads': { 
-    name: 'Meta Ads', 
-    authEndpoint: '/meta-ads/auth-url', 
+  'meta-ads': {
+    name: 'Meta Ads',
+    authEndpoint: '/meta-ads/auth-url',
     itemsEndpoint: '/meta-ads/accounts',
     saveEndpoint: '/meta-ads/select-account',
     itemIdField: 'accountId',
@@ -135,9 +134,9 @@ const SERVICE_CONFIG: Record<string, {
     description: 'Track ad performance across Meta platforms',
     itemLabel: 'Ad Account'
   },
-  'linkedin': { 
-    name: 'LinkedIn', 
-    authEndpoint: '/linkedin/auth-url', 
+  'linkedin': {
+    name: 'LinkedIn',
+    authEndpoint: '/linkedin/auth-url',
     itemsEndpoint: '/linkedin/pages',
     saveEndpoint: '/linkedin/page',
     itemIdField: 'pageId',
@@ -147,9 +146,9 @@ const SERVICE_CONFIG: Record<string, {
     description: 'View company page and professional insights',
     itemLabel: 'Page'
   },
-  'google-sheets': { 
-    name: 'Google Sheets', 
-    authEndpoint: '/google-sheets/auth', 
+  'google-sheets': {
+    name: 'Google Sheets',
+    authEndpoint: '/google-sheets/auth',
     itemsEndpoint: '/google-sheets/spreadsheets',
     saveEndpoint: '/google-sheets/spreadsheet',
     itemIdField: 'spreadsheetId',
@@ -159,9 +158,9 @@ const SERVICE_CONFIG: Record<string, {
     description: 'Connect spreadsheets and data',
     itemLabel: 'Spreadsheet'
   },
-  'google-drive': { 
-    name: 'Google Drive', 
-    authEndpoint: '/google-drive/auth', 
+  'google-drive': {
+    name: 'Google Drive',
+    authEndpoint: '/google-drive/auth',
     itemsEndpoint: '/google-drive/folders',
     saveEndpoint: '/google-drive/folder',
     itemIdField: 'folderId',
@@ -228,7 +227,7 @@ const ReconnectButton = ({
 
       if (data.success && authUrl) {
         setStep('oauth');
-        
+
         const width = 600;
         const height = 700;
         const left = window.screenX + (window.outerWidth - width) / 2;
@@ -313,7 +312,7 @@ const ReconnectButton = ({
     try {
       // Find selected item to get access token (for Facebook pages)
       const selectedItem = items.find(i => i.id === selectedItemId);
-      
+
       const payload: any = {
         projectId,
         [config.itemIdField]: selectedItemId,
@@ -367,8 +366,8 @@ const ReconnectButton = ({
                   backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
                 }} />
               </div>
-              
-              <button 
+
+              <button
                 onClick={handleClose}
                 disabled={loading && step !== 'error'}
                 className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors disabled:opacity-50"
@@ -377,7 +376,7 @@ const ReconnectButton = ({
               </button>
 
               <div className="relative flex items-center gap-4">
-                <motion.div 
+                <motion.div
                   className={`w-16 h-16 ${config.iconBg} rounded-2xl flex items-center justify-center text-3xl shadow-lg`}
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -426,7 +425,7 @@ const ReconnectButton = ({
                     <Button variant="outline" onClick={handleClose} className="flex-1">
                       Cancel
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleStartOAuth}
                       disabled={loading}
                       className={`flex-1 bg-gradient-to-r ${config.gradient} border-0`}
@@ -456,8 +455,8 @@ const ReconnectButton = ({
                       Complete the sign-in in the popup window
                     </p>
                   </div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={handleFetchItems}
                     className="mt-4"
                   >
@@ -500,32 +499,29 @@ const ReconnectButton = ({
                         const isSelected = String(selectedItemId) === String(item.id);
                         console.log('[ReconnectButton] Item:', item.id, 'Selected:', selectedItemId, 'Match:', isSelected);
                         return (
-                        <button
-                          key={item.id}
-                          onClick={() => {
-                            console.log('[ReconnectButton] Clicked item:', item.id, item.name);
-                            setSelectedItemId(item.id);
-                          }}
-                          className={`w-full text-left rounded-lg border-2 p-4 transition-all ${
-                            isSelected
-                              ? `border-green-600 bg-green-600 text-white shadow-md`
-                              : 'border-slate-200 bg-white hover:border-green-400 hover:bg-green-50'
-                          }`}
-                        >
-                          <div className={`font-semibold ${
-                            isSelected ? 'text-white' : 'text-slate-900'
-                          }`}>
-                            {item.name || '(Unnamed)'}
-                          </div>
-                          <div className={`text-xs mt-1 ${
-                            isSelected ? 'text-white/90' : 'text-slate-500'
-                          }`}>
-                            ID: {item.id}
-                            {item.category && ` • ${item.category}`}
-                            {item.subscriberCount && ` • ${item.subscriberCount} subscribers`}
-                          </div>
-                        </button>
-                      );
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              console.log('[ReconnectButton] Clicked item:', item.id, item.name);
+                              setSelectedItemId(item.id);
+                            }}
+                            className={`w-full text-left rounded-lg border-2 p-4 transition-all ${isSelected
+                                ? `border-green-600 bg-green-600 text-white shadow-md`
+                                : 'border-slate-200 bg-white hover:border-green-400 hover:bg-green-50'
+                              }`}
+                          >
+                            <div className={`font-semibold ${isSelected ? 'text-white' : 'text-slate-900'
+                              }`}>
+                              {item.name || '(Unnamed)'}
+                            </div>
+                            <div className={`text-xs mt-1 ${isSelected ? 'text-white/90' : 'text-slate-500'
+                              }`}>
+                              ID: {item.id}
+                              {item.category && ` • ${item.category}`}
+                              {item.subscriberCount && ` • ${item.subscriberCount} subscribers`}
+                            </div>
+                          </button>
+                        );
                       })}
                     </div>
                   ) : (
@@ -554,7 +550,7 @@ const ReconnectButton = ({
                     <Button variant="outline" onClick={() => setStep('confirm')} className="flex-1">
                       Back
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleSaveSelection}
                       disabled={!selectedItemId || loading}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
@@ -615,7 +611,7 @@ const ReconnectButton = ({
                     <Button variant="outline" onClick={handleClose} className="flex-1">
                       Cancel
                     </Button>
-                    <Button 
+                    <Button
                       onClick={() => {
                         setError(null);
                         setStep('confirm');

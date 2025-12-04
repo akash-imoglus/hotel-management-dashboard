@@ -21,7 +21,6 @@ const ConnectGoogleSearchConsole = ({ projectId, onSuccess, onClose }: ConnectGo
   const [selectedSiteUrl, setSelectedSiteUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authUrl, setAuthUrl] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Filter sites based on search query (by site URL or permission level)
@@ -70,14 +69,13 @@ const ConnectGoogleSearchConsole = ({ projectId, onSuccess, onClose }: ConnectGo
         `/gsc/auth?projectId=${projectId}`
       );
       if (data.success && data.data.authUrl) {
-        setAuthUrl(data.data.authUrl);
         setStep("oauth");
         // Open OAuth window
         const width = 600;
         const height = 700;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
-        
+
         const popup = window.open(
           data.data.authUrl,
           "Google Search Console Authorization",
@@ -87,7 +85,7 @@ const ConnectGoogleSearchConsole = ({ projectId, onSuccess, onClose }: ConnectGo
         // Listen for message from popup
         const messageListener = (event: MessageEvent) => {
           if (event.origin !== window.location.origin) return;
-          
+
           if (event.data.type === "GOOGLE_SEARCH_CONSOLE_OAUTH_SUCCESS" && event.data.projectId === projectId) {
             window.removeEventListener("message", messageListener);
             handleCheckConnection();
@@ -161,9 +159,9 @@ const ConnectGoogleSearchConsole = ({ projectId, onSuccess, onClose }: ConnectGo
         projectId,
         siteUrl: selectedSiteUrl.trim(),
       });
-      
+
       console.log("Save site response:", response.data);
-      
+
       // Verify the site was saved
       if (response.data.success) {
         const savedProject = response.data.data;
@@ -173,7 +171,7 @@ const ConnectGoogleSearchConsole = ({ projectId, onSuccess, onClose }: ConnectGo
             onSuccess();
           }, 1500);
         } else {
-          console.warn("Site URL mismatch:", { saved: savedProject?.searchConsoleSiteUrl, expected: siteUrlToSave });
+          console.warn("Site URL mismatch:", { saved: savedProject?.searchConsoleSiteUrl, expected: selectedSiteUrl.trim() });
           // Still proceed if response is successful
           setStep("success");
           setTimeout(() => {
@@ -287,7 +285,7 @@ const ConnectGoogleSearchConsole = ({ projectId, onSuccess, onClose }: ConnectGo
                   <label className="text-sm font-medium text-slate-700">
                     Available Sites
                   </label>
-                  
+
                   {/* Search Bar */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -299,7 +297,7 @@ const ConnectGoogleSearchConsole = ({ projectId, onSuccess, onClose }: ConnectGo
                       className="pl-10"
                     />
                   </div>
-                  
+
                   {/* Sites List */}
                   {filteredSites.length === 0 ? (
                     <div className="text-center py-8 text-slate-500">
@@ -319,11 +317,10 @@ const ConnectGoogleSearchConsole = ({ projectId, onSuccess, onClose }: ConnectGo
                         <button
                           key={site.siteUrl}
                           onClick={() => setSelectedSiteUrl(site.siteUrl)}
-                          className={`w-full text-left rounded-lg border p-4 transition-colors ${
-                            selectedSiteUrl === site.siteUrl
-                              ? "border-hotel-ocean bg-hotel-foam"
-                              : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                          }`}
+                          className={`w-full text-left rounded-lg border p-4 transition-colors ${selectedSiteUrl === site.siteUrl
+                            ? "border-hotel-ocean bg-hotel-foam"
+                            : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
                         >
                           <div className="font-semibold text-slate-900">{site.siteUrl}</div>
                           <div className="text-xs text-slate-500 mt-1">
@@ -333,7 +330,7 @@ const ConnectGoogleSearchConsole = ({ projectId, onSuccess, onClose }: ConnectGo
                       ))}
                     </div>
                   )}
-                  
+
                   {searchQuery && filteredSites.length > 0 && (
                     <p className="text-xs text-slate-500">
                       Showing {filteredSites.length} of {sites.length} sites
@@ -345,7 +342,7 @@ const ConnectGoogleSearchConsole = ({ projectId, onSuccess, onClose }: ConnectGo
                   No sites found. Please ensure you have sites set up in your Google Search Console account.
                 </div>
               )}
-              
+
               {error && (
                 <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
                   {error}
